@@ -27,7 +27,7 @@ function App() {
   );
   const [collection, setCollection] = useState(null);
   const [value, setValue] = React.useState("1");
-
+  const [isUpdatingCollection, setIsUpdatingCollection] = useState(false);
   const [chatChannel, setChatChannel] = useState(null);
   const setChatChannelMemo = useCallback((channel) => {
     setValue("2");
@@ -37,15 +37,29 @@ function App() {
   const onTabChange = useCallback((event, newValue) => setValue(newValue), []);
 
   useEffect(() => {
-    if (collectionUUID) {
+    function getCollection() {
+      if(isUpdatingCollection){
+        setIsUpdatingCollection(false);
+        return;
+      }
       fetch(`http://localhost:3000/collections/${collectionUUID}`)
         .then((res) => res.json())
         .then((data) => {
+          if(isUpdatingCollection){
+            setIsUpdatingCollection(false);
+            return;
+          }
           setCollection(data);
-          setChatChannel(data.liveChannels[0]);
         });
     }
-  }, [collectionUUID]);
+    getCollection()
+    const interval = setInterval(() => getCollection(), 10000)
+    return () => {
+      clearInterval(interval);
+    }
+}, [collectionUUID])
+
+
   // let collection = url.searchParams.get("collection");
   if (!collectionUUID) {
     return (
@@ -112,6 +126,7 @@ function App() {
                       }
                     ).then((res) => console.log(res));
                     setCollection({ ...collection });
+                    setIsUpdatingCollection(true);
                   }}
                 />
               </Box>

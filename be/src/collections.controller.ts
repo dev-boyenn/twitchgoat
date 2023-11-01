@@ -39,15 +39,12 @@ export class CollectionsController {
     }
 
     const token = await getTwitchToken();
-   await Promise.all(
-      collection.channels.map(async (channel) => {
+    for(const channel of collectionModel.channels){
         if (await isStreamerLive(channel, token)) {
           collectionModel.liveChannels.push(channel);
-          return channel;
         }
-      }),
-    );
-    console.log(collectionModel);
+      }
+    
     return collectionModel;
   }
 
@@ -86,7 +83,6 @@ async function getTwitchToken() {
   });
 
   const data = await response.json();
-  console.log(data);
   return `Bearer ${data.access_token}`;
 }
 
@@ -100,6 +96,5 @@ async function isStreamerLive(username, token) {
   const response = await fetch(url, { headers: headers });
   const data = await response.json();
 
-  console.log(data);
   return data?.data?.find((s) => s.user_login === username.toLocaleLowerCase());
 }
