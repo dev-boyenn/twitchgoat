@@ -101,7 +101,7 @@ function App() {
                   style={{ margin: 0, padding: 0, width: "100%" }}
                   onUpdateCollection={(collection) => {
                     fetch(
-                      `https://twitchgoat.vercel.app/${collectionUUID}`,
+                      `https://twitchgoat.vercel.app/collections/${collectionUUID}`,
                       {
                         method: "PUT",
                         body: JSON.stringify(collection),
