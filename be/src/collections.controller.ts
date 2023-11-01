@@ -2,67 +2,71 @@ import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
 import { AppService } from './app.service';
 import { randomUUID } from 'crypto';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { Collections } from './collection.schema';
+import { Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
 
-interface Collection {
-  name: string;
-  channels: string[];
+
+
+interface CollectionModel{
+  name:string;
+  channels:string[];
+  uuid:string;
+  liveChannels?:string[];
 }
-
 @Controller('collections')
 export class CollectionsController {
-  constructor() {
-    // load collections from collections.json
-    if (!existsSync('collections.json')) {
-      writeFileSync('collections.json', '{}', 'utf-8');
-    }
-  }
+  constructor(@InjectModel(Collections.name) private collectionsModel: Model<Collections>) {}
 
   @Get()
-  getCollections(): { [key: string]: Collection } {
-    return JSON.parse(readFileSync('collections.json', 'utf-8'));
+  async getCollections(): Promise< Collections[]>  {
+
+    return await this.collectionsModel.find().exec();
+    // return JSON.parse(readFileSync('collections.json', 'utf-8'));
   }
 
   @Get(':uuid')
-  async getCollectionByUUID(@Param('uuid') uuid: string): Promise<Collection> {
-    const collection = JSON.parse(readFileSync('collections.json', 'utf-8'))[
-      uuid
-    ];
-    collection.liveChannels = [];
+  async getCollectionByUUID(@Param('uuid') uuid: string): Promise<CollectionModel> {
+    const collection = await this.collectionsModel.findOne({uuid:uuid}).exec();
+
+    const collectionModel: CollectionModel = {
+      uuid: collection.uuid,
+      name: collection.name,
+      channels: collection.channels,
+      liveChannels:[],
+    }
+
     const token = await getTwitchToken();
-    const channels = await Promise.all(
+   await Promise.all(
       collection.channels.map(async (channel) => {
         if (await isStreamerLive(channel, token)) {
-          collection.liveChannels.push(channel);
+          collectionModel.liveChannels.push(channel);
           return channel;
         }
       }),
     );
-    console.log(collection);
-    return collection;
-    //
-    // collection.liveChannels = collection.channels.filter((channel) => {
+    console.log(collectionModel);
+    return collectionModel;
   }
 
   @Post()
-  createNewCollection(): string {
-    const collections = JSON.parse(readFileSync('collections.json', 'utf-8'));
-    const uuid = randomUUID().toString();
-    collections[uuid] = {
-      name: '',
-      channels: [],
-    };
-    writeFileSync('collections.json', JSON.stringify(collections), 'utf-8');
-    return uuid;
+  async createNewCollection(): Promise<string> {
+    const newModel = await this.collectionsModel.create({
+      uuid:randomUUID().toString(),
+      name:'',
+      channels:[],
+    })
+    
+    return newModel.uuid;
   }
 
   @Put(':uuid')
   updateCollectionByUUID(
     @Param('uuid') uuid: string,
-    @Body() collection: Collection,
+    @Body() collection: CollectionModel,
   ): void {
-    const collections = JSON.parse(readFileSync('collections.json', 'utf-8'));
-    collections[uuid] = collection;
-    writeFileSync('collections.json', JSON.stringify(collections), 'utf-8');
+
+    this.collectionsModel.findOneAndUpdate({uuid:uuid},collection).exec();
   }
 }
 
