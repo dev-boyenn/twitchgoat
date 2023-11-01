@@ -103,7 +103,7 @@ function App() {
                     fetch(
                       `https://twitchgoat.vercel.app/collections/${collectionUUID}`,
                       {
-                        mode: 'no-cors',
+                        
                         method: "PUT",
                         body: JSON.stringify(collection),
                         headers: {
