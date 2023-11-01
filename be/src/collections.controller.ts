@@ -13,6 +13,7 @@ interface CollectionModel{
   channels:string[];
   uuid:string;
   liveChannels?:string[];
+  hiddenChannels?:string[];
 }
 @Controller('collections')
 export class CollectionsController {
@@ -33,6 +34,7 @@ export class CollectionsController {
       uuid: collection.uuid,
       name: collection.name,
       channels: collection.channels,
+      hiddenChannels: collection.hiddenChannels||[],
       liveChannels:[],
     }
 

@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { TwitchChat } from "react-twitch-embed";
 import { Box, Button, IconButton, Input, List, ListItem } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 function CollectionEditor({ collection, onUpdateCollection }) {
   const [newChannelName, setNewChannelName] = useState("");
 
@@ -13,6 +15,20 @@ function CollectionEditor({ collection, onUpdateCollection }) {
     collection.liveChannels = collection.liveChannels.filter(
       (c) => c != channel
     );
+    collection.hiddenChannels = collection.hiddenChannels.filter(
+      (c) => c != channel
+    );
+    onUpdateCollection(collection);
+  };
+
+  const onToggleHideChannel = (channel) => {
+    if(collection.hiddenChannels.indexOf(channel) == -1) {
+      collection.hiddenChannels.push(channel);
+    }else{
+      collection.hiddenChannels = collection.hiddenChannels.filter(
+        (c) => c != channel
+      );
+    }
     onUpdateCollection(collection);
   };
   return (
@@ -47,6 +63,10 @@ function CollectionEditor({ collection, onUpdateCollection }) {
               <IconButton onClick={() => onRemoveChannel(channel)}>
                 <DeleteIcon />
               </IconButton>
+              <IconButton onClick={() => onToggleHideChannel(channel)}>
+                  {collection.hiddenChannels.indexOf(channel) > -1  && <VisibilityIcon />}
+                  {collection.hiddenChannels.indexOf(channel) == -1  && <VisibilityOffIcon />}
+                </IconButton>
             </ListItem>
           ))}
         </List>
@@ -61,6 +81,10 @@ function CollectionEditor({ collection, onUpdateCollection }) {
                 {channel}{" "}
                 <IconButton onClick={() => onRemoveChannel(channel)}>
                   <DeleteIcon />
+                </IconButton>
+                <IconButton onClick={() => onToggleHideChannel(channel)}>
+                  {collection.hiddenChannels.indexOf(channel) > -1  && <VisibilityIcon />}
+                  {collection.hiddenChannels.indexOf(channel) == -1  && <VisibilityOffIcon />}
                 </IconButton>
               </ListItem>
             ))}

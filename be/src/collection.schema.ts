@@ -11,6 +11,8 @@ export class Collections {
   name: string;
   @Prop()
 channels: string[];
+@Prop()
+hiddenChannels: string[];
 }
 
 export const CollectionsSchema = SchemaFactory.createForClass(Collections);
