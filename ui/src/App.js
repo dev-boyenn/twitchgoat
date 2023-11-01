@@ -38,7 +38,7 @@ function App() {
 
   useEffect(() => {
     if (collectionUUID) {
-      fetch(`http://localhost:3000/collections/${collectionUUID}`)
+      fetch(`https://twitchgoat.vercel.app/collections/${collectionUUID}`)
         .then((res) => res.json())
         .then((data) => {
           setCollection(data);
@@ -53,7 +53,7 @@ function App() {
         No collection specified{" "}
         <button
           onClick={() => {
-            fetch("http://localhost:3000/collections", {
+            fetch("https://twitchgoat.vercel.app/collections", {
               method: "POST",
               body: JSON.stringify({}),
             })
@@ -101,7 +101,7 @@ function App() {
                   style={{ margin: 0, padding: 0, width: "100%" }}
                   onUpdateCollection={(collection) => {
                     fetch(
-                      `http://localhost:3000/collections/${collectionUUID}`,
+                      `https://twitchgoat.vercel.app/${collectionUUID}`,
                       {
                         method: "PUT",
                         body: JSON.stringify(collection),
