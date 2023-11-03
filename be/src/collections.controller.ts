@@ -6,56 +6,57 @@ import { Collections } from './collection.schema';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 
-
-
-interface CollectionModel{
-  name:string;
-  channels:string[];
-  uuid:string;
-  liveChannels?:string[];
-  hiddenChannels?:string[];
+interface CollectionModel {
+  name: string;
+  channels: string[];
+  uuid: string;
+  liveChannels?: string[];
 }
 @Controller('collections')
 export class CollectionsController {
-  constructor(@InjectModel(Collections.name) private collectionsModel: Model<Collections>) {}
+  constructor(
+    @InjectModel(Collections.name) private collectionsModel: Model<Collections>,
+  ) {}
 
   @Get()
-  async getCollections(): Promise< Collections[]>  {
-
+  async getCollections(): Promise<Collections[]> {
     return await this.collectionsModel.find().exec();
     // return JSON.parse(readFileSync('collections.json', 'utf-8'));
   }
 
   @Get(':uuid')
-  async getCollectionByUUID(@Param('uuid') uuid: string): Promise<CollectionModel> {
-    const collection = await this.collectionsModel.findOne({uuid:uuid}).exec();
+  async getCollectionByUUID(
+    @Param('uuid') uuid: string,
+  ): Promise<CollectionModel> {
+    const collection = await this.collectionsModel
+      .findOne({ uuid: uuid })
+      .exec();
 
     const collectionModel: CollectionModel = {
       uuid: collection.uuid,
       name: collection.name,
       channels: collection.channels,
-      hiddenChannels: collection.hiddenChannels||[],
-      liveChannels:[],
-    }
+      liveChannels: [],
+    };
 
     const token = await getTwitchToken();
-    for(const channel of collectionModel.channels){
-        if (await isStreamerLive(channel, token)) {
-          collectionModel.liveChannels.push(channel);
-        }
+    for (const channel of collectionModel.channels) {
+      if (await isStreamerLive(channel, token)) {
+        collectionModel.liveChannels.push(channel);
       }
-    
+    }
+
     return collectionModel;
   }
 
   @Post()
   async createNewCollection(): Promise<string> {
     const newModel = await this.collectionsModel.create({
-      uuid:randomUUID().toString(),
-      name:'',
-      channels:[],
-    })
-    
+      uuid: randomUUID().toString(),
+      name: '',
+      channels: [],
+    });
+
     return newModel.uuid;
   }
 
@@ -64,8 +65,7 @@ export class CollectionsController {
     @Param('uuid') uuid: string,
     @Body() collection: CollectionModel,
   ): void {
-
-    this.collectionsModel.findOneAndUpdate({uuid:uuid},collection).exec();
+    this.collectionsModel.findOneAndUpdate({ uuid: uuid }, collection).exec();
   }
 }
 

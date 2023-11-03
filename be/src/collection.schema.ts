@@ -5,14 +5,12 @@ export type CollectionDocument = HydratedDocument<Collections>;
 
 @Schema()
 export class Collections {
-    @Prop()
-    uuid: string;
+  @Prop()
+  uuid: string;
   @Prop()
   name: string;
   @Prop()
-channels: string[];
-@Prop()
-hiddenChannels: string[];
+  channels: string[];
 }
 
 export const CollectionsSchema = SchemaFactory.createForClass(Collections);
