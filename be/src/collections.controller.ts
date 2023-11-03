@@ -5,6 +5,8 @@ import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { Collections } from './collection.schema';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
+import memoize from 'fast-memoize';
+import * as cache from 'memory-cache';
 
 interface CollectionModel {
   name: string;
@@ -39,12 +41,17 @@ export class CollectionsController {
       liveChannels: [],
     };
 
-    const token = await getTwitchToken();
-    for (const channel of collectionModel.channels) {
-      if (await isStreamerLive(channel, token)) {
-        collectionModel.liveChannels.push(channel);
-      }
-    }
+    await Promise.all(
+      collectionModel.channels.map(async (channel) => {
+        if (await isStreamerLiveCached(channel)) {
+          collectionModel.liveChannels.push(channel);
+        }
+      }),
+    );
+
+    collectionModel.liveChannels.sort((a, b) =>
+      a.toLocaleLowerCase().localeCompare(b.toLocaleLowerCase()),
+    );
 
     return collectionModel;
   }
@@ -86,15 +93,49 @@ async function getTwitchToken() {
   return `Bearer ${data.access_token}`;
 }
 
-async function isStreamerLive(username, token) {
-  const url = `https://api.twitch.tv/helix/streams?user_login=${username}`;
-  const headers = {
-    'Client-Id': 'ffro9q623pad2c9695prwzlhwcw9v9',
-    Authorization: token,
-  };
+async function getCachedToken() {
+  const cachedData = cache.get('token');
+  if (cachedData) {
+    return cachedData;
+  }
 
-  const response = await fetch(url, { headers: headers });
-  const data = await response.json();
+  const data = await getTwitchToken();
 
-  return data?.data?.find((s) => s.user_login === username.toLocaleLowerCase());
+  cache.put('token', data, 60000); // Cache for 60 seconds
+
+  return data;
+}
+
+async function isStreamerLiveCached(username) {
+  const cachedData = cache.get(username);
+  console.log('cachedData', cachedData);
+  if (cachedData !== null) {
+    return cachedData;
+  }
+
+  const data = await isStreamerLive(username);
+
+  cache.put(username, data, 60000); // Cache for 60 seconds
+
+  return data;
+}
+
+async function isStreamerLive(username) {
+  try {
+    const token = await getCachedToken();
+    const url = `https://api.twitch.tv/helix/streams?user_login=${username}`;
+    const headers = {
+      'Client-Id': 'ffro9q623pad2c9695prwzlhwcw9v9',
+      Authorization: token,
+    };
+
+    const response = await fetch(url, { headers: headers });
+    const data = await response.json();
+    console.log(data);
+    return !!data?.data?.find(
+      (s) => s.user_login === username.toLocaleLowerCase(),
+    );
+  } catch (err) {
+    console.log(err);
+  }
 }
