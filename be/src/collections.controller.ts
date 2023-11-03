@@ -52,6 +52,9 @@ export class CollectionsController {
     collectionModel.liveChannels.sort((a, b) =>
       a.toLocaleLowerCase().localeCompare(b.toLocaleLowerCase()),
     );
+    collectionModel.channels.sort((a, b) =>
+      a.toLocaleLowerCase().localeCompare(b.toLocaleLowerCase()),
+    );
 
     return collectionModel;
   }
