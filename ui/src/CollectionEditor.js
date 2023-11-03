@@ -7,30 +7,22 @@ import { Box, Button, IconButton, Input, List, ListItem } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-function CollectionEditor({ collection, onUpdateCollection }) {
+function CollectionEditor({
+  collection,
+  hiddenChannels,
+  onUpdateCollection,
+  onToggleHideChannel,
+}) {
   const [newChannelName, setNewChannelName] = useState("");
 
   const onRemoveChannel = (channel) => {
     collection.channels = collection.channels.filter((c) => c != channel);
     collection.liveChannels = collection.liveChannels.filter(
-      (c) => c != channel
-    );
-    collection.hiddenChannels = collection.hiddenChannels.filter(
-      (c) => c != channel
+      (c) => c !== channel
     );
     onUpdateCollection(collection);
   };
 
-  const onToggleHideChannel = (channel) => {
-    if(collection.hiddenChannels.indexOf(channel) == -1) {
-      collection.hiddenChannels.push(channel);
-    }else{
-      collection.hiddenChannels = collection.hiddenChannels.filter(
-        (c) => c != channel
-      );
-    }
-    onUpdateCollection(collection);
-  };
   return (
     <Box>
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
@@ -64,9 +56,9 @@ function CollectionEditor({ collection, onUpdateCollection }) {
                 <DeleteIcon />
               </IconButton>
               <IconButton onClick={() => onToggleHideChannel(channel)}>
-                  {collection.hiddenChannels.indexOf(channel) > -1  && <VisibilityIcon />}
-                  {collection.hiddenChannels.indexOf(channel) == -1  && <VisibilityOffIcon />}
-                </IconButton>
+                {hiddenChannels.indexOf(channel) > -1 && <VisibilityOffIcon />}
+                {hiddenChannels.indexOf(channel) === -1 && <VisibilityIcon />}
+              </IconButton>
             </ListItem>
           ))}
         </List>
@@ -83,8 +75,10 @@ function CollectionEditor({ collection, onUpdateCollection }) {
                   <DeleteIcon />
                 </IconButton>
                 <IconButton onClick={() => onToggleHideChannel(channel)}>
-                  {collection.hiddenChannels.indexOf(channel) > -1  && <VisibilityIcon />}
-                  {collection.hiddenChannels.indexOf(channel) == -1  && <VisibilityOffIcon />}
+                  {hiddenChannels.indexOf(channel) > -1 && (
+                    <VisibilityOffIcon />
+                  )}
+                  {hiddenChannels.indexOf(channel) === -1 && <VisibilityIcon />}
                 </IconButton>
               </ListItem>
             ))}
