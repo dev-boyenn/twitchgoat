@@ -94,6 +94,12 @@ function App() {
     console.log(settings);
     window.localStorage.setItem("settings", JSON.stringify(settings));
   }, [settings]);
+
+  useEffect(() => {
+    if (!!settings.switchChatOnFocus && focussedChanels.length > 0) {
+      setChatChannel(focussedChanels[0]);
+    }
+  }, [focussedChanels, settings.switchChatOnFocus]);
   // let collection = url.searchParams.get("collection");
   if (!collectionUUID) {
     return (
@@ -212,16 +218,30 @@ function App() {
             </TabPanel>
             <TabPanel value="3">
               <Box sx={{ width: "100%", margin: 0 }}>
-                <Checkbox
-                  onChange={(e, v) =>
-                    setSettings({
-                      ...settings,
-                      unmuteFocussedChannels: v,
-                    })
-                  }
-                  value={settings.unmuteFocussedChannels}
-                ></Checkbox>
-                Unmute focussed channels
+                <Box>
+                  <Checkbox
+                    onChange={(e, v) =>
+                      setSettings({
+                        ...settings,
+                        unmuteFocussedChannels: v,
+                      })
+                    }
+                    value={settings.unmuteFocussedChannels}
+                  ></Checkbox>
+                  Unmute focussed channels
+                </Box>
+                <Box>
+                  <Checkbox
+                    onChange={(e, v) =>
+                      setSettings({
+                        ...settings,
+                        switchChatOnFocus: v,
+                      })
+                    }
+                    value={settings.switchChatOnFocus}
+                  ></Checkbox>
+                  Switch Chat to first focussed channel
+                </Box>
               </Box>
             </TabPanel>
           </TabContext>
