@@ -178,7 +178,7 @@ function App() {
               <TabList onChange={onTabChange} aria-label="lab API tabs example">
                 <Tab label="Collection" value="1" />
                 <Tab label="Chat" value="2" />
-                <Tab label="Setings" value="3" />
+                <Tab label="Settings" value="3" />
               </TabList>
             </Box>
             <TabPanel value="1" sx={{ overflow: "initial" }}>
@@ -226,7 +226,7 @@ function App() {
                         unmuteFocussedChannels: v,
                       })
                     }
-                    value={settings.unmuteFocussedChannels}
+                    checked={settings.unmuteFocussedChannels}
                   ></Checkbox>
                   Unmute focussed channels
                 </Box>
@@ -238,7 +238,7 @@ function App() {
                         switchChatOnFocus: v,
                       })
                     }
-                    value={settings.switchChatOnFocus}
+                    checked={settings.switchChatOnFocus}
                   ></Checkbox>
                   Switch Chat to first focussed channel
                 </Box>
