@@ -1,10 +1,10 @@
 import "./App.css";
-import { TwitchPlayer } from "react-twitch-embed";
+import { TwitchPlayer, TwitchPlayerNonInteractive } from "react-twitch-embed";
 import { useState, useEffect, useCallback } from "react";
 import { IconButton, Box } from "@mui/material";
 import ChatIcon from "@mui/icons-material/Chat";
 function PlayerGrid({
-  collection,
+  liveChannels,
   onSetChatChannel,
   hiddenChannels,
   onToggleHideChannel,
@@ -12,7 +12,6 @@ function PlayerGrid({
   setFocussedChannels,
   focussedChannels,
 }) {
-  console.log(collection);
 
   const handleKeyPress = useCallback(
     (event) => {
@@ -47,7 +46,7 @@ function PlayerGrid({
     };
   }, [handleKeyPress]);
 
-  const channels = collection.liveChannels.filter(
+  const channels = liveChannels.filter(
     (ch) => hiddenChannels.indexOf(ch) === -1
   );
 
@@ -80,10 +79,9 @@ function PlayerGrid({
             gridTemplateRows: `repeat(1, 1fr)`,
           }}
         >
-          {focussedChannels.map((channel) => (
+          {focussedChannels.map((channel,index) => (
             <div
               style={{ width: "100%", height: "100%" }}
-              id={"div-" + channel}
               class="twitch-player"
             >
               {/* <div> */}
@@ -98,13 +96,12 @@ function PlayerGrid({
               >
                 <ChatIcon />
               </IconButton>
-              {/* </div> */}
 
               <TwitchPlayer
                 playsInline
                 allowFullscreen
                 channel={channel}
-                id={channel}
+                id={"focussed" + index.toString()}
                 width={"100%"}
                 height={"100%"}
                 autoplay
@@ -127,10 +124,9 @@ function PlayerGrid({
       >
         {channels
           .filter((channel) => focussedChannels.indexOf(channel) === -1)
-          .map((channel) => (
+          .map((channel,index) => (
             <div
               style={{ width: "100%", height: "100%" }}
-              id={"div-" + channel}
               class="twitch-player"
             >
               {/* <div> */}
@@ -152,7 +148,7 @@ function PlayerGrid({
                 playsInline
                 allowFullscreen
                 channel={channel}
-                id={channel}
+                id={"unfocussed" + index.toString()}
                 width={"100%"}
                 height={"100%"}
                 autoplay
