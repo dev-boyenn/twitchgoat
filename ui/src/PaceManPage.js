@@ -102,6 +102,9 @@ function PaceManPage() {
           const liveRuns = data.filter(
             (run) => run.user.liveAccount != null && run.isHidden === false
           );
+          const hiddenRuns = data.filter(
+            (run) => run.user.liveAccount != null && run.isHidden === true
+          );
 
           const orderedRuns = liveRuns
             .map((run) => {
@@ -182,6 +185,21 @@ function PaceManPage() {
               ) {
                 orderedRuns.push({
                   liveAccount: channel,
+                  split: null,
+                  time: null,
+                });
+              }
+            });
+          }
+
+          // If its still less than the minimum channels, add some hidden runs
+          if (orderedRuns.length < minChannels) {
+            hiddenRuns.forEach((run) => {
+              if (
+                !orderedRuns.find((r) => r.liveAccount === run.user.liveAccount)
+              ) {
+                orderedRuns.push({
+                  liveAccount: run.user.liveAccount,
                   split: null,
                   time: null,
                 });
