@@ -1,5 +1,4 @@
 import "./App.css";
-import CollectionEditor from "./CollectionEditor";
 import PlayerGrid from "./PlayerGrid";
 import { useEffect, useState, useCallback } from "react";
 import * as React from "react";
@@ -7,16 +6,12 @@ import Box from "@mui/material/Box";
 import Tab from "@mui/material/Tab";
 import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
-import Grid from "@mui/material/Grid";
 import MenuIcon from "@mui/icons-material/Menu";
 import TabPanel from "@mui/lab/TabPanel";
 import Drawer from "@mui/material/Drawer";
 import { TwitchChat } from "react-twitch-embed";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
-import CssBaseline from "@mui/material/CssBaseline";
-import { Button, Checkbox, IconButton, Slider } from "@mui/material";
+import { Checkbox, IconButton, Slider } from "@mui/material";
 import Typography from "@mui/material/Typography";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 const goodsplits = {
   NETHER: 90,
@@ -27,16 +22,6 @@ const goodsplits = {
   "END ENTER": 420,
 };
 
-const eventIds = [
-  "rsg.enter_nether",
-  "rsg.enter_bastion",
-  "rsg.enter_fortress",
-  "rsg.first_portal",
-  "rsg.second_portal",
-  "rsg.enter_stronghold",
-  "rsg.enter_end",
-  "rsg.credits",
-];
 const progressionBonus = {
   NETHER: -0.1,
   S1: 0.1,
@@ -52,14 +37,8 @@ const getAdjustedTime = (split, time) => {
   // Subtract the progression bonus to reward further stages
   return timeFactor - progressionBonus[split];
 };
-const secondsTommss = (seconds) => {
-  let minutes = Math.floor(seconds / 60);
-  let secs = Math.floor(seconds % 60);
-  return `${minutes}:${secs.toString().padStart(2, "0")}`;
-};
 
 function PaceManPage() {
-  const [splitWeight, setSplitWeight] = useState(0.5);
   const [value, setValue] = React.useState("1");
   const [liveChannels, setLiveChannels] = useState([]);
   const [chatChannel, setChatChannel] = useState(null);
@@ -120,7 +99,10 @@ function PaceManPage() {
       fetch("https://paceman.gg/api/ars/liveruns")
         .then((res) => res.json())
         .then((data) => {
-          const liveRuns = data.filter((run) => run.user.liveAccount != null);
+          const liveRuns = data.filter(
+            (run) => run.user.liveAccount != null && run.isHidden === false
+          );
+
           const orderedRuns = liveRuns
             .map((run) => {
               const liveAccount = run.user.liveAccount;
