@@ -13,6 +13,7 @@ export const usePacemanData = (settings) => {
     JSON.parse(window.localStorage.getItem("hiddenChannels")) || []
   );
   const [focussedChannels, setFocussedChannels] = useState([]);
+  const [previousRunsData, setPreviousRunsData] = useState({});
 
   // Save hidden channels to localStorage when they change
   useEffect(() => {
@@ -111,8 +112,11 @@ export const usePacemanData = (settings) => {
           }
         }
 
-        // Map runs with basic info first
-        let runsWithBasicInfo = liveRuns.map(processRunData);
+        // Map runs with basic info, passing previous run data if available
+        let runsWithBasicInfo = liveRuns.map((run) => {
+          const previousData = previousRunsData[run.user.liveAccount];
+          return processRunData(run, previousData);
+        });
 
         // Fetch PB times for each runner
         const pbPromises = runsWithBasicInfo.map(async (run) => {
@@ -130,10 +134,18 @@ export const usePacemanData = (settings) => {
         // Log the runs with PB times
         console.log("Runs with PB times:", runsWithPb);
 
-        // Sort runs by adjusted time
+        // Store the current run data for future reference
+        const newPreviousRunsData = {};
+        runsWithPb.forEach((run) => {
+          newPreviousRunsData[run.liveAccount] = run;
+        });
+        setPreviousRunsData(newPreviousRunsData);
+
+        // Sort runs by adjusted time, taking into account split duration
         const orderedRuns = runsWithPb.sort((a, b) => {
           return (
-            getAdjustedTime(a.split, a.time) - getAdjustedTime(b.split, b.time)
+            getAdjustedTime(a.split, a.time, a.splitDuration) -
+            getAdjustedTime(b.split, b.time, b.splitDuration)
           );
         });
 
