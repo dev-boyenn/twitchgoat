@@ -10,7 +10,19 @@ export const goodsplits = {
   BLIND: 300,
   STRONGHOLD: 400,
   "END ENTER": 420,
+  FINISH: 600, // Added finish split for completed runs
 };
+
+// Split order for progression
+export const splitOrder = [
+  "NETHER",
+  "S1",
+  "S2",
+  "BLIND",
+  "STRONGHOLD",
+  "END ENTER",
+  "FINISH",
+];
 
 // Progression bonus values for different splits
 export const progressionBonus = {
@@ -20,29 +32,38 @@ export const progressionBonus = {
   BLIND: 0.8,
   STRONGHOLD: 0.85,
   "END ENTER": 0.9,
+  FINISH: 1.0, // Added finish split bonus
 };
 
-// Order of splits for progression
-export const splitOrder = [
-  "NETHER",
-  "S1",
-  "S2",
-  "BLIND",
-  "STRONGHOLD",
-  "END ENTER",
-];
+/**
+ * Calculates the current time based on the lastUpdated timestamp
+ * @param {number} lastUpdated - The lastUpdated timestamp from the API
+ * @returns {number} The current time in milliseconds
+ */
+export const calculateCurrentTime = (lastUpdated) => {
+  if (!lastUpdated) return 0;
+
+  // Get the current timestamp
+  const currentTimestamp = Date.now();
+
+  // Calculate the time difference in milliseconds
+  const timeDifference = currentTimestamp - lastUpdated;
+
+  // Return the time difference in milliseconds
+  return timeDifference;
+};
 
 /**
  * Gets the next split in the progression
- * @param {string} currentSplit - The current split name
- * @returns {string|null} The next split name, or null if there is no next split
+ * @param {string} currentSplit - The current split
+ * @returns {string|null} The next split or null if there is no next split
  */
 export const getNextSplit = (currentSplit) => {
   if (!currentSplit) return null;
 
   const currentIndex = splitOrder.indexOf(currentSplit);
   if (currentIndex === -1 || currentIndex === splitOrder.length - 1) {
-    return null; // No next split if current split is not found or is the last one
+    return null;
   }
 
   return splitOrder[currentIndex + 1];
@@ -52,33 +73,33 @@ export const getNextSplit = (currentSplit) => {
  * Calculates the adjusted time for a split
  * @param {string} split - The split name
  * @param {number} time - The time in seconds
- * @param {number} [splitDuration=0] - How long the runner has been in this split (in seconds)
+ * @param {number} lastUpdated - The lastUpdated timestamp from the API
  * @returns {number} The adjusted time value
  */
-export const getAdjustedTime = (split, time, splitDuration = 0) => {
+export const getAdjustedTime = (split, time, lastUpdated) => {
   if (!split || !time) return Infinity;
 
-  // Calculate how close the time is to the good split time for current split
-  const timeFactor = time / goodsplits[split];
-  const currentSplitScore = timeFactor - progressionBonus[split];
+  // Calculate how close the time is to the good split time for the current split
+  const currentSplitTimeFactor = time / goodsplits[split];
+  const currentSplitScore = currentSplitTimeFactor - progressionBonus[split];
 
-  // Check if we should consider the next split
+  // If there's no lastUpdated timestamp, just return the current split score
+  if (!lastUpdated) return currentSplitScore;
+
+  // Get the next split in the progression
   const nextSplit = getNextSplit(split);
-  if (nextSplit && splitDuration > 0) {
-    // Estimate time for the next split
-    // Current time + how long they've been in this split
-    const estimatedNextSplitTime = time + splitDuration;
+  if (!nextSplit) return currentSplitScore; // If there's no next split, return the current split score
 
-    // Calculate score for the next split
-    const nextSplitTimeFactor = estimatedNextSplitTime / goodsplits[nextSplit];
-    const nextSplitScore = nextSplitTimeFactor - progressionBonus[nextSplit];
+  // Calculate the current time based on the lastUpdated timestamp
+  const currentTimeMs = calculateCurrentTime(lastUpdated);
+  const currentTimeSec = currentTimeMs / 1000 + time; // Add the current split time
 
-    // Return the worse (lower) score
-    return Math.min(currentSplitScore, nextSplitScore);
-  }
+  // Calculate the score for the next split using the current time
+  const nextSplitTimeFactor = currentTimeSec / goodsplits[nextSplit];
+  const nextSplitScore = nextSplitTimeFactor - progressionBonus[nextSplit];
 
-  // If no next split or no duration info, just return the current split score
-  return currentSplitScore;
+  // Return the worse (higher) score between the current split and the next split
+  return Math.max(currentSplitScore, nextSplitScore);
 };
 
 /**
@@ -94,47 +115,36 @@ export const formatTime = (seconds) => {
 };
 
 /**
- * Determines the current split and time from run data
+ * Processes raw run data from the API into a structured format
  * @param {Object} run - The raw run data from the API
- * @returns {Object} Object containing split and time information
+ * @returns {Object} Processed run data
  */
-export const determineCurrentSplit = (run) => {
+export const processRunData = (run) => {
+  const liveAccount = run.user.liveAccount;
+  const name = run.user.username || liveAccount; // Use username or fallback to liveAccount
+  const minecraftName = run.nickname; // This is the Minecraft account name
+  const lastUpdated = run.lastUpdated; // Get the lastUpdated timestamp
   let split = null;
   let time = null;
 
-  // Determine the current split and its time
   if (run.eventList.find((e) => e.eventId === "rsg.enter_end")) {
     split = "END ENTER";
-    const event = run.eventList.find((e) => e.eventId === "rsg.enter_end");
-    time = event.igt;
+    time = run.eventList.find((e) => e.eventId === "rsg.enter_end").igt;
   } else if (run.eventList.find((e) => e.eventId === "rsg.enter_stronghold")) {
     split = "STRONGHOLD";
-    const event = run.eventList.find(
-      (e) => e.eventId === "rsg.enter_stronghold"
-    );
-    time = event.igt;
+    time = run.eventList.find((e) => e.eventId === "rsg.enter_stronghold").igt;
   } else if (run.eventList.find((e) => e.eventId === "rsg.first_portal")) {
     split = "BLIND";
-    const event = run.eventList.find((e) => e.eventId === "rsg.first_portal");
-    time = event.igt;
+    time = run.eventList.find((e) => e.eventId === "rsg.first_portal").igt;
   } else if (
     run.eventList.find((e) => e.eventId === "rsg.enter_fortress") &&
     run.eventList.find((e) => e.eventId === "rsg.enter_bastion")
   ) {
     split = "S2";
-    const fortressEvent = run.eventList.find(
-      (e) => e.eventId === "rsg.enter_fortress"
+    time = Math.max(
+      run.eventList.find((e) => e.eventId === "rsg.enter_fortress").igt,
+      run.eventList.find((e) => e.eventId === "rsg.enter_bastion").igt
     );
-    const bastionEvent = run.eventList.find(
-      (e) => e.eventId === "rsg.enter_bastion"
-    );
-
-    // Use the later of the two events
-    if (fortressEvent.igt > bastionEvent.igt) {
-      time = fortressEvent.igt;
-    } else {
-      time = bastionEvent.igt;
-    }
   } else if (
     run.eventList.find(
       (e) =>
@@ -142,46 +152,13 @@ export const determineCurrentSplit = (run) => {
     )
   ) {
     split = "S1";
-    const event = run.eventList.find(
+    time = run.eventList.find(
       (e) =>
         e.eventId === "rsg.enter_fortress" || e.eventId === "rsg.enter_bastion"
-    );
-    time = event.igt;
+    ).igt;
   } else if (run.eventList.find((e) => e.eventId === "rsg.enter_nether")) {
     split = "NETHER";
-    const event = run.eventList.find((e) => e.eventId === "rsg.enter_nether");
-    time = event.igt;
-  }
-
-  return {
-    split,
-    time: time ? time / 1000 : null,
-  };
-};
-
-/**
- * Processes raw run data from the API into a structured format
- * @param {Object} run - The raw run data from the API
- * @param {Object} splitInfo - Information about the runner's current split
- * @returns {Object} Processed run data
- */
-export const processRunData = (run, splitInfo = null) => {
-  const liveAccount = run.user.liveAccount;
-  const name = run.user.username || liveAccount; // Use username or fallback to liveAccount
-  const minecraftName = run.nickname; // This is the Minecraft account name
-
-  // Get split and time information
-  const { split, time } = determineCurrentSplit(run);
-
-  // Calculate split duration
-  let splitDuration = 0;
-
-  if (splitInfo) {
-    if (splitInfo.split === split) {
-      // Same split as before, calculate duration from when they entered the split
-      splitDuration = (Date.now() - splitInfo.enteredSplitAt) / 1000;
-    }
-    // If split changed, splitDuration remains 0
+    time = run.eventList.find((e) => e.eventId === "rsg.enter_nether").igt;
   }
 
   return {
@@ -189,8 +166,8 @@ export const processRunData = (run, splitInfo = null) => {
     name,
     minecraftName,
     split,
-    time,
-    splitDuration,
-    pb: splitInfo ? splitInfo.pb : null, // Preserve PB if available
+    time: time ? time / 1000 : null,
+    lastUpdated, // Include the lastUpdated timestamp
+    pb: null, // Will be populated later
   };
 };
