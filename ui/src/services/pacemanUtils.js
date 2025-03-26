@@ -131,6 +131,8 @@ export const getAdjustedTime = (
   if (returnDetails) {
     return {
       score: finalScore,
+      currentSplitScore, // Add current split score
+      nextSplitScore, // Add next split score
       usedSplit: useNextSplit ? nextSplit : split,
       currentTime: time,
       estimatedTime: estimatedTimeSec,

@@ -117,6 +117,33 @@ const PaceOverlay = ({ split, time, name, pb, debugInfo }) => {
           >
             Using: {debugInfo.usedSplit || split}
           </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              fontSize: "0.75rem",
+              color: debugInfo.usedSplit === split ? "#8f8" : "#aaa",
+            }}
+          >
+            Curr:{" "}
+            {debugInfo.currentSplitScore
+              ? debugInfo.currentSplitScore.toFixed(2)
+              : "N/A"}
+          </Typography>
+          {debugInfo.nextSplit && (
+            <Typography
+              variant="body2"
+              sx={{
+                fontSize: "0.75rem",
+                color:
+                  debugInfo.usedSplit === debugInfo.nextSplit ? "#8f8" : "#aaa",
+              }}
+            >
+              Next:{" "}
+              {debugInfo.nextSplitScore
+                ? debugInfo.nextSplitScore.toFixed(2)
+                : "N/A"}
+            </Typography>
+          )}
         </>
       )}
     </Box>
