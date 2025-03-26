@@ -69,34 +69,50 @@ export const usePacemanData = (settings) => {
           settings.filteredRunners
         );
 
+        // Log the filtered runners list
+        if (filteredRunnersList.length > 0) {
+          console.log("Filtering runners by:", filteredRunnersList);
+        }
+
         // Filter live runs
         let liveRuns = data.filter(
           (run) => run.user.liveAccount != null && run.isHidden === false
         );
 
-        const hiddenRuns = data.filter(
+        let hiddenRuns = data.filter(
           (run) => run.user.liveAccount != null && run.isHidden === true
         );
 
-        // Map runs with basic info first
-        let runsWithBasicInfo = liveRuns.map(processRunData);
-
-        // Apply additional filtering if filteredRunnersList is not empty
+        // If we have a filter, apply it to both live and hidden runs
         if (filteredRunnersList.length > 0) {
-          console.log("Filtering runners by:", filteredRunnersList);
-          runsWithBasicInfo = runsWithBasicInfo.filter((run) => {
-            // Check if the runner's Minecraft nickname is in the filtered list
+          // Helper function to check if a run matches the filter
+          const matchesFilter = (run) => {
             const isMatch = filteredRunnersList.some(
               (username) =>
-                run.minecraftName &&
-                run.minecraftName.toLowerCase() === username.toLowerCase()
+                run.nickname &&
+                run.nickname.toLowerCase() === username.toLowerCase()
             );
             if (isMatch) {
-              console.log(`Runner ${run.minecraftName} matches filter`);
+              console.log(`Runner ${run.nickname} matches filter`);
             }
             return isMatch;
-          });
+          };
+
+          // Filter both live and hidden runs
+          liveRuns = liveRuns.filter(matchesFilter);
+          hiddenRuns = hiddenRuns.filter(matchesFilter);
+
+          // If no runners match the filter, don't show any
+          if (liveRuns.length === 0 && hiddenRuns.length === 0) {
+            console.log("No runners match the filter, showing empty grid");
+            setLiveChannels([]);
+            setFocussedChannels([]);
+            return;
+          }
         }
+
+        // Map runs with basic info first
+        let runsWithBasicInfo = liveRuns.map(processRunData);
 
         // Fetch PB times for each runner
         const pbPromises = runsWithBasicInfo.map(async (run) => {
@@ -123,7 +139,12 @@ export const usePacemanData = (settings) => {
 
         // Use the minimum total channels setting (defaulting to 3)
         const minChannels = settings.minTotalChannels || 3;
-        if (orderedRuns.length < minChannels) {
+
+        // Only add previous channels if we're not filtering or if they match the filter
+        if (
+          orderedRuns.length < minChannels &&
+          filteredRunnersList.length === 0
+        ) {
           liveChannels.forEach((channelData) => {
             if (
               !orderedRuns.find(
@@ -144,7 +165,11 @@ export const usePacemanData = (settings) => {
         }
 
         // If its still less than the minimum channels, add some hidden runs
-        if (orderedRuns.length < minChannels) {
+        // Only do this if we're not filtering or if the hidden runs match the filter
+        if (
+          orderedRuns.length < minChannels &&
+          (filteredRunnersList.length === 0 || hiddenRuns.length > 0)
+        ) {
           for (const run of hiddenRuns) {
             if (
               !orderedRuns.find((r) => r.liveAccount === run.user.liveAccount)
@@ -207,7 +232,7 @@ export const usePacemanData = (settings) => {
           }
         }
 
-        if (channelsChanged) {
+        if (channelsChanged || filteredRunnersList.length > 0) {
           // Store the full run data including split and time information
           console.log("Setting live channels:", limitedRuns);
           setLiveChannels(limitedRuns);
