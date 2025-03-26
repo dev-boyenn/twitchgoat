@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useEffect, useCallback } from "react";
+import "./PlayerGrid.css";
 import { TwitchPlayer } from "react-twitch-embed";
 import { IconButton, Box } from "@mui/material";
 import ChatIcon from "@mui/icons-material/Chat";
 import PaceOverlay from "./PaceOverlay";
-import "./PlayerGrid.css";
 
 /**
  * PlayerGrid component for displaying Twitch streams
@@ -96,32 +96,7 @@ function PlayerGrid({
     numColumns = Math.ceil(Math.sqrt(channels.length));
     numRows = Math.ceil(channels.length / numColumns);
   }
-  // Set up a timer to check for recent mouse movement
-  useEffect(() => {
-    const checkMouseMovement = () => {
-      const players = document.querySelectorAll(".twitch-player");
-      players.forEach((player) => {
-        if (player.dataset.isHovered === "true") {
-          const lastMoved = parseInt(player.dataset.lastMoved || "0");
-          const now = Date.now();
-          const timeSinceLastMove = now - lastMoved;
-
-          // If mouse hasn't moved for 2 seconds, hide the chat icon
-          const chatIcon = player.querySelector(".chat-icon-container");
-          if (chatIcon) {
-            if (timeSinceLastMove > 2000) {
-              chatIcon.style.opacity = "0";
-            } else {
-              chatIcon.style.opacity = "1";
-            }
-          }
-        }
-      });
-    };
-
-    const interval = setInterval(checkMouseMovement, 500);
-    return () => clearInterval(interval);
-  }, []);
+  console.log(numColumns, numRows);
   // Create the grid template columns and rows CSS properties
   const gridTemplateColumns = `repeat(${numColumns}, 1fr)`;
   const gridTemplateRows = `repeat(${numRows}, 1fr)`;
@@ -153,19 +128,6 @@ function PlayerGrid({
                 style={{ width: "100%", height: "100%", position: "relative" }}
                 className="twitch-player"
                 key={channelData.liveAccount + index}
-                onMouseEnter={(e) => {
-                  const target = e.currentTarget;
-                  target.dataset.isHovered = "true";
-                  target.dataset.lastMoved = Date.now().toString();
-                }}
-                onMouseMove={(e) => {
-                  const target = e.currentTarget;
-                  target.dataset.lastMoved = Date.now().toString();
-                }}
-                onMouseLeave={(e) => {
-                  const target = e.currentTarget;
-                  target.dataset.isHovered = "false";
-                }}
               >
                 {/* Chat Icon - Only visible on hover with recent movement */}
                 <div
@@ -174,8 +136,6 @@ function PlayerGrid({
                     top: "10px",
                     right: "10px",
                     zIndex: 1001,
-                    opacity: 0,
-                    transition: "opacity 0.2s ease-in-out",
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",
@@ -244,19 +204,6 @@ function PlayerGrid({
               style={{ width: "100%", height: "100%", position: "relative" }}
               className="twitch-player"
               key={channelData.liveAccount + index}
-              onMouseEnter={(e) => {
-                const target = e.currentTarget;
-                target.dataset.isHovered = "true";
-                target.dataset.lastMoved = Date.now().toString();
-              }}
-              onMouseMove={(e) => {
-                const target = e.currentTarget;
-                target.dataset.lastMoved = Date.now().toString();
-              }}
-              onMouseLeave={(e) => {
-                const target = e.currentTarget;
-                target.dataset.isHovered = "false";
-              }}
             >
               {/* Chat Icon - Only visible on hover with recent movement */}
               <div
@@ -265,8 +212,6 @@ function PlayerGrid({
                   top: "10px",
                   right: "10px",
                   zIndex: 1001,
-                  opacity: 0,
-                  transition: "opacity 0.2s ease-in-out",
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
