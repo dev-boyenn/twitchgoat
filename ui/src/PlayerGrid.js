@@ -1,8 +1,107 @@
 import "./App.css";
 import { TwitchPlayer, TwitchPlayerNonInteractive } from "react-twitch-embed";
 import { useState, useEffect, useCallback } from "react";
-import { IconButton, Box } from "@mui/material";
+import { IconButton, Box, Typography } from "@mui/material";
 import ChatIcon from "@mui/icons-material/Chat";
+
+// Split icons mapping - using Minecraft-themed icons from paceman.gg
+const splitIcons = {
+  NETHER: "https://paceman.gg/stats/nether.webp", // Nether icon
+  S1: "https://paceman.gg/stats/bastion.webp", // Bastion icon (Structure 1)
+  S2: "https://paceman.gg/stats/fortress.webp", // Fortress icon (Structure 2)
+  BLIND: "https://paceman.gg/stats/first_portal.webp", // First Portal icon (Blind)
+  STRONGHOLD: "https://paceman.gg/stats/stronghold.webp", // Stronghold icon
+  "END ENTER": "https://paceman.gg/stats/end.webp", // End icon
+  FINISH: "https://paceman.gg/stats/finish.webp", // Finish icon
+};
+
+// Fallback to text labels if images don't load
+const splitLabels = {
+  NETHER: "Nether",
+  S1: "S1",
+  S2: "S2",
+  BLIND: "Blind",
+  STRONGHOLD: "SH",
+  "END ENTER": "End",
+};
+
+// Format time in minutes:seconds
+const formatTime = (seconds) => {
+  if (!seconds) return "";
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+};
+
+// Pace overlay component
+const PaceOverlay = ({ split, time, name, pb }) => {
+  // Use state to track if image failed to load
+  const [imageError, setImageError] = useState(false);
+
+  if (!split || !time) return null;
+
+  return (
+    <Box
+      sx={{
+        position: "absolute",
+        top: "10px",
+        left: "10px",
+        backgroundColor: "rgba(0, 0, 0, 0.7)",
+        color: "white",
+        padding: "5px 10px",
+        borderRadius: "4px",
+        zIndex: 1000,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: "5px",
+        }}
+      >
+        {splitIcons[split] && !imageError ? (
+          <img
+            src={splitIcons[split]}
+            alt={split}
+            style={{ width: "24px", height: "24px" }}
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <span
+            style={{
+              fontWeight: "bold",
+              color:
+                split === "NETHER"
+                  ? "#9b59b6"
+                  : split === "S1"
+                  ? "#f1c40f"
+                  : split === "S2"
+                  ? "#34495e"
+                  : split === "BLIND"
+                  ? "#2ecc71"
+                  : split === "STRONGHOLD"
+                  ? "#95a5a6"
+                  : split === "END ENTER"
+                  ? "#3498db"
+                  : "white",
+            }}
+          >
+            {splitLabels[split] || split}
+          </span>
+        )}
+        <Typography variant="body2">{formatTime(time)}</Typography>
+      </Box>
+      {name && (
+        <Typography variant="body2" sx={{ fontSize: "0.85rem" }}>
+          {name} {pb ? `(PB: ${formatTime(pb)})` : ""}
+        </Typography>
+      )}
+    </Box>
+  );
+};
 function PlayerGrid({
   liveChannels,
   onSetChatChannel,
@@ -12,28 +111,55 @@ function PlayerGrid({
   setFocussedChannels,
   focussedChannels,
 }) {
+  // Filter out hidden channels
+  const channels = liveChannels.filter(
+    (ch) => hiddenChannels.indexOf(ch.liveAccount) === -1
+  );
 
   const handleKeyPress = useCallback(
     (event) => {
       if (event.code === "KeyF") {
-        if (document.querySelectorAll(".twitch-player :hover").length == 0)
+        if (document.querySelectorAll(".twitch-player:hover").length == 0)
           return;
-        const channel = document
-          .querySelectorAll(".twitch-player :hover")
+
+        // Get the ID from the hovered element
+        const hoveredId = document
+          .querySelectorAll(".twitch-player:hover")
           .item(0).id;
-        if (event.shiftKey) {
-          setFocussedChannels([channel]);
-          return;
+
+        // Extract the index from the ID (format is "focussed0" or "unfocussed0")
+        const isFocussed = hoveredId.startsWith("focussed");
+        const index = parseInt(hoveredId.replace(/^(focussed|unfocussed)/, ""));
+
+        // Get the channel data based on whether it's in the focused or unfocused section
+        let channelName;
+        if (isFocussed) {
+          channelName = focussedChannels[index];
+        } else {
+          const unfocusedChannels = channels.filter(
+            (ch) => focussedChannels.indexOf(ch.liveAccount) === -1
+          );
+          channelName = unfocusedChannels[index]?.liveAccount;
         }
-        if (focussedChannels.indexOf(channel) > -1) {
-          setFocussedChannels(focussedChannels.filter((c) => c !== channel));
+
+        if (!channelName) return;
+
+        if (event.shiftKey) {
+          setFocussedChannels([channelName]);
           return;
         }
 
-        setFocussedChannels([...focussedChannels, channel]);
+        if (focussedChannels.indexOf(channelName) > -1) {
+          setFocussedChannels(
+            focussedChannels.filter((c) => c !== channelName)
+          );
+          return;
+        }
+
+        setFocussedChannels([...focussedChannels, channelName]);
       }
     },
-    [focussedChannels, setFocussedChannels]
+    [focussedChannels, setFocussedChannels, channels]
   );
 
   useEffect(() => {
@@ -45,10 +171,6 @@ function PlayerGrid({
       document.removeEventListener("keydown", handleKeyPress);
     };
   }, [handleKeyPress]);
-
-  const channels = liveChannels.filter(
-    (ch) => hiddenChannels.indexOf(ch) === -1
-  );
 
   let numColumns;
   let numRows;
@@ -79,36 +201,53 @@ function PlayerGrid({
             gridTemplateRows: `repeat(1, 1fr)`,
           }}
         >
-          {focussedChannels.map((channel,index) => (
-            <div
-              style={{ width: "100%", height: "100%" }}
-              class="twitch-player"
-            >
-              {/* <div> */}
-              <IconButton
-                style={{
-                  position: "absolute",
-                }}
-                aria-label="delete"
-                onClick={() => {
-                  onSetChatChannel(channel);
-                }}
-              >
-                <ChatIcon />
-              </IconButton>
+          {focussedChannels.map((channelName, index) => {
+            // Find the channel data in the liveChannels array
+            const channelData = liveChannels.find(
+              (ch) => ch.liveAccount === channelName
+            );
+            if (!channelData) return null;
 
-              <TwitchPlayer
-                playsInline
-                allowFullscreen
-                channel={channel}
-                id={"focussed" + index.toString()}
-                width={"100%"}
-                height={"100%"}
-                autoplay
-                muted={!settings.unmuteFocussedChannels}
-              />
-            </div>
-          ))}
+            return (
+              <div
+                style={{ width: "100%", height: "100%", position: "relative" }}
+                className="twitch-player"
+                key={channelData.liveAccount + index}
+              >
+                <IconButton
+                  style={{
+                    position: "absolute",
+                    zIndex: 1001,
+                  }}
+                  aria-label="chat"
+                  onClick={() => {
+                    onSetChatChannel(channelData.liveAccount);
+                  }}
+                >
+                  <ChatIcon />
+                </IconButton>
+
+                {/* Pace Overlay */}
+                <PaceOverlay
+                  split={channelData.split}
+                  time={channelData.time}
+                  name={channelData.minecraftName || channelData.name}
+                  pb={channelData.pb}
+                />
+
+                <TwitchPlayer
+                  playsInline
+                  allowFullscreen
+                  channel={channelData.liveAccount}
+                  id={"focussed" + index.toString()}
+                  width={"100%"}
+                  height={"100%"}
+                  autoplay
+                  muted={!settings.unmuteFocussedChannels}
+                />
+              </div>
+            );
+          })}
         </div>
       )}
       <div
@@ -123,31 +262,41 @@ function PlayerGrid({
         }}
       >
         {channels
-          .filter((channel) => focussedChannels.indexOf(channel) === -1)
-          .map((channel,index) => (
+          .filter(
+            (channelData) =>
+              focussedChannels.indexOf(channelData.liveAccount) === -1
+          )
+          .map((channelData, index) => (
             <div
-              style={{ width: "100%", height: "100%" }}
-              class="twitch-player"
+              style={{ width: "100%", height: "100%", position: "relative" }}
+              className="twitch-player"
+              key={channelData.liveAccount + index}
             >
-              {/* <div> */}
               <IconButton
                 style={{
                   position: "absolute",
+                  zIndex: 1001,
                 }}
-                aria-label="delete"
+                aria-label="chat"
                 onClick={() => {
-                  onSetChatChannel(channel);
+                  onSetChatChannel(channelData.liveAccount);
                 }}
               >
                 <ChatIcon />
               </IconButton>
-              {/* </div> */}
+
+              {/* Pace Overlay */}
+              <PaceOverlay
+                split={channelData.split}
+                time={channelData.time}
+                name={channelData.minecraftName || channelData.name}
+                pb={channelData.pb}
+              />
 
               <TwitchPlayer
-                // playsInline={true}
                 playsInline
                 allowFullscreen
-                channel={channel}
+                channel={channelData.liveAccount}
                 id={"unfocussed" + index.toString()}
                 width={"100%"}
                 height={"100%"}
