@@ -30,9 +30,10 @@ const splitLabels = {
  * @param {number} props.time - The time in seconds
  * @param {string} props.name - The runner's name
  * @param {number} props.pb - The runner's PB time
+ * @param {number} props.splitDuration - How long the runner has been in this split (in seconds)
  * @returns {JSX.Element} The pace overlay component
  */
-const PaceOverlay = ({ split, time, name, pb }) => {
+const PaceOverlay = ({ split, time, name, pb, splitDuration = 0 }) => {
   // Use state to track if image failed to load
   const [imageError, setImageError] = useState(false);
 
@@ -53,6 +54,7 @@ const PaceOverlay = ({ split, time, name, pb }) => {
         flexDirection: "column",
       }}
     >
+      {/* Split icon and time */}
       <Box
         sx={{
           display: "flex",
@@ -92,6 +94,24 @@ const PaceOverlay = ({ split, time, name, pb }) => {
         )}
         <Typography variant="body2">{formatTime(time)}</Typography>
       </Box>
+
+      {/* Estimated current time */}
+      {splitDuration > 0 && (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{ fontSize: "0.85rem", color: "#3498db" }}
+          >
+            Est: {formatTime(time + splitDuration)}
+          </Typography>
+        </Box>
+      )}
       {name && (
         <Typography variant="body2" sx={{ fontSize: "0.85rem" }}>
           {name} {pb ? `(PB: ${formatTime(pb)})` : ""}

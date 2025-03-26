@@ -73,7 +73,7 @@ export const getAdjustedTime = (split, time, splitDuration = 0) => {
     const nextSplitTimeFactor = estimatedNextSplitTime / goodsplits[nextSplit];
     const nextSplitScore = nextSplitTimeFactor - progressionBonus[nextSplit];
 
-    // Return the better (lower) score
+    // Return the worse (lower) score
     return Math.min(currentSplitScore, nextSplitScore);
   }
 
@@ -94,21 +94,13 @@ export const formatTime = (seconds) => {
 };
 
 /**
- * Processes raw run data from the API into a structured format
+ * Determines the current split and time from run data
  * @param {Object} run - The raw run data from the API
- * @param {Object} [previousRunData=null] - Previous run data for this runner, if available
- * @returns {Object} Processed run data
+ * @returns {Object} Object containing split and time information
  */
-export const processRunData = (run, previousRunData = null) => {
-  const liveAccount = run.user.liveAccount;
-  const name = run.user.username || liveAccount; // Use username or fallback to liveAccount
-  const minecraftName = run.nickname; // This is the Minecraft account name
+export const determineCurrentSplit = (run) => {
   let split = null;
   let time = null;
-  let splitDuration = 0;
-
-  // Get the current server time
-  const currentTimestamp = Date.now();
 
   // Determine the current split and its time
   if (run.eventList.find((e) => e.eventId === "rsg.enter_end")) {
@@ -161,24 +153,35 @@ export const processRunData = (run, previousRunData = null) => {
     time = event.igt;
   }
 
-  // Calculate how long the runner has been in this split
-  if (run.lastUpdated) {
-    // If the split is the same as before, calculate duration based on lastUpdated
-    if (previousRunData && previousRunData.split === split) {
-      // Calculate time since the last update
-      const timeSinceLastUpdate = (currentTimestamp - run.lastUpdated) / 1000; // Convert to seconds
+  return {
+    split,
+    time: time ? time / 1000 : null,
+  };
+};
 
-      // Add the previous duration plus the time since the last update
-      splitDuration = previousRunData.splitDuration + timeSinceLastUpdate;
-    } else {
-      // If the split has changed or there's no previous data,
-      // assume the runner just entered this split
-      splitDuration = (currentTimestamp - run.lastUpdated) / 1000; // Convert to seconds
+/**
+ * Processes raw run data from the API into a structured format
+ * @param {Object} run - The raw run data from the API
+ * @param {Object} splitInfo - Information about the runner's current split
+ * @returns {Object} Processed run data
+ */
+export const processRunData = (run, splitInfo = null) => {
+  const liveAccount = run.user.liveAccount;
+  const name = run.user.username || liveAccount; // Use username or fallback to liveAccount
+  const minecraftName = run.nickname; // This is the Minecraft account name
+
+  // Get split and time information
+  const { split, time } = determineCurrentSplit(run);
+
+  // Calculate split duration
+  let splitDuration = 0;
+
+  if (splitInfo) {
+    if (splitInfo.split === split) {
+      // Same split as before, calculate duration from when they entered the split
+      splitDuration = (Date.now() - splitInfo.enteredSplitAt) / 1000;
     }
-  } else if (previousRunData && previousRunData.split === split) {
-    // If we don't have lastUpdated but we have previous data with the same split,
-    // increment the previous duration by the polling interval
-    splitDuration = previousRunData.splitDuration + 10; // Add 10 seconds (polling interval)
+    // If split changed, splitDuration remains 0
   }
 
   return {
@@ -186,8 +189,8 @@ export const processRunData = (run, previousRunData = null) => {
     name,
     minecraftName,
     split,
-    time: time ? time / 1000 : null,
+    time,
     splitDuration,
-    pb: previousRunData ? previousRunData.pb : null, // Preserve PB if available
+    pb: splitInfo ? splitInfo.pb : null, // Preserve PB if available
   };
 };

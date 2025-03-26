@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { fetchLiveRuns, fetchPbTime } from "./pacemanService";
-import { processRunData, getAdjustedTime } from "./pacemanUtils";
+import {
+  processRunData,
+  getAdjustedTime,
+  determineCurrentSplit,
+} from "./pacemanUtils";
 
 /**
  * Custom hook for managing PaceMan data
@@ -13,7 +17,8 @@ export const usePacemanData = (settings) => {
     JSON.parse(window.localStorage.getItem("hiddenChannels")) || []
   );
   const [focussedChannels, setFocussedChannels] = useState([]);
-  const [previousRunsData, setPreviousRunsData] = useState({});
+  const [runnerSplitInfo, setRunnerSplitInfo] = useState({});
+  // Structure: { [liveAccount]: { split: string, enteredSplitAt: number, pb: number } }
 
   // Save hidden channels to localStorage when they change
   useEffect(() => {
@@ -112,19 +117,51 @@ export const usePacemanData = (settings) => {
           }
         }
 
-        // Map runs with basic info, passing previous run data if available
-        let runsWithBasicInfo = liveRuns.map((run) => {
-          const previousData = previousRunsData[run.user.liveAccount];
-          return processRunData(run, previousData);
+        // Create a new split info object to track changes
+        const newRunnerSplitInfo = { ...runnerSplitInfo };
+
+        // Process runs with split info
+        let processedRuns = liveRuns.map((run) => {
+          const liveAccount = run.user.liveAccount;
+          const currentSplitInfo = runnerSplitInfo[liveAccount];
+
+          // Get current split and time
+          const { split, time } = determineCurrentSplit(run);
+
+          // Determine if this is a new split or continuing an existing one
+          let enteredSplitAt = run.lastUpdated;
+          if (currentSplitInfo && currentSplitInfo.split === split) {
+            // Same split as before, keep the original entry timestamp
+            enteredSplitAt = currentSplitInfo.enteredSplitAt;
+          }
+
+          // Update our tracking state
+          newRunnerSplitInfo[liveAccount] = {
+            split,
+            enteredSplitAt,
+            pb: currentSplitInfo?.pb || null,
+          };
+
+          // Process the run data
+          return processRunData(run, newRunnerSplitInfo[liveAccount]);
         });
 
         // Fetch PB times for each runner
-        const pbPromises = runsWithBasicInfo.map(async (run) => {
-          // Use Minecraft nickname if available, otherwise use Twitch name
+        const pbPromises = processedRuns.map(async (run) => {
+          // If we already have a PB, use it
+          if (newRunnerSplitInfo[run.liveAccount]?.pb) {
+            return run;
+          }
+
+          // Otherwise fetch a new PB
           const nameForPb = run.minecraftName || run.name;
           console.log(`Fetching PB for ${nameForPb}...`);
           const pb = await fetchPbTime(nameForPb);
           console.log(`PB for ${nameForPb}: ${pb}`);
+
+          // Update our tracking state with the PB
+          newRunnerSplitInfo[run.liveAccount].pb = pb;
+
           return { ...run, pb };
         });
 
@@ -134,12 +171,8 @@ export const usePacemanData = (settings) => {
         // Log the runs with PB times
         console.log("Runs with PB times:", runsWithPb);
 
-        // Store the current run data for future reference
-        const newPreviousRunsData = {};
-        runsWithPb.forEach((run) => {
-          newPreviousRunsData[run.liveAccount] = run;
-        });
-        setPreviousRunsData(newPreviousRunsData);
+        // Update our split info state
+        setRunnerSplitInfo(newRunnerSplitInfo);
 
         // Sort runs by adjusted time, taking into account split duration
         const orderedRuns = runsWithPb.sort((a, b) => {
