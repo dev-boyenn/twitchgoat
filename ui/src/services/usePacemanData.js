@@ -74,24 +74,29 @@ export const usePacemanData = (settings) => {
           (run) => run.user.liveAccount != null && run.isHidden === false
         );
 
-        // Apply additional filtering if filteredRunnersList is not empty
-        if (filteredRunnersList.length > 0) {
-          liveRuns = liveRuns.filter((run) => {
-            // Check if the runner's Minecraft nickname is in the filtered list
-            return filteredRunnersList.some(
-              (username) =>
-                run.nickname &&
-                run.nickname.toLowerCase() === username.toLowerCase()
-            );
-          });
-        }
-
         const hiddenRuns = data.filter(
           (run) => run.user.liveAccount != null && run.isHidden === true
         );
 
         // Map runs with basic info first
-        const runsWithBasicInfo = liveRuns.map(processRunData);
+        let runsWithBasicInfo = liveRuns.map(processRunData);
+
+        // Apply additional filtering if filteredRunnersList is not empty
+        if (filteredRunnersList.length > 0) {
+          console.log("Filtering runners by:", filteredRunnersList);
+          runsWithBasicInfo = runsWithBasicInfo.filter((run) => {
+            // Check if the runner's Minecraft nickname is in the filtered list
+            const isMatch = filteredRunnersList.some(
+              (username) =>
+                run.minecraftName &&
+                run.minecraftName.toLowerCase() === username.toLowerCase()
+            );
+            if (isMatch) {
+              console.log(`Runner ${run.minecraftName} matches filter`);
+            }
+            return isMatch;
+          });
+        }
 
         // Fetch PB times for each runner
         const pbPromises = runsWithBasicInfo.map(async (run) => {
