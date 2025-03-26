@@ -76,7 +76,7 @@ export class PacemanService {
       this.logger.log('Fetching leaderboard from paceman.gg API');
 
       const response = await fetch(
-        'https://paceman.gg/stats/api/getLeaderboard/?category=finish&type=fastest&days=9999&limit=10000',
+        'https://paceman.gg/stats/api/getLeaderboard/?category=finish&type=fastest&days=99999&limit=10000',
         {
           headers: {
             Accept: 'application/json',

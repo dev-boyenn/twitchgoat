@@ -272,7 +272,7 @@ function PlayerGrid({
                 <div
                   style={{
                     position: "absolute",
-                    top: "10px",
+                    top: "50px",
                     right: "10px",
                     zIndex: 1001,
                     display: "flex",
@@ -346,7 +346,7 @@ function PlayerGrid({
               <div
                 style={{
                   position: "absolute",
-                  top: "10px",
+                  top: "50px",
                   right: "10px",
                   zIndex: 1001,
                   display: "flex",
