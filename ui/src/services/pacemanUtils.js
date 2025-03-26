@@ -112,6 +112,7 @@ export const getAdjustedTime = (
           currentTime: time,
           estimatedTime: null,
           nextSplit: null,
+          lastUpdated: lastUpdated,
         }
       : currentSplitScore;
   }
@@ -137,6 +138,9 @@ export const getAdjustedTime = (
       currentTime: time,
       estimatedTime: estimatedTimeSec,
       nextSplit: nextSplit,
+      lastUpdated: lastUpdated,
+      goodSplitTime: goodsplits[nextSplit], // Add good split time for next split
+      progressionBonus: progressionBonus[nextSplit], // Add progression bonus for next split
     };
   }
 

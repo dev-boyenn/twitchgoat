@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { fetchLiveRuns, fetchPbTime } from "./pacemanService";
 import { processRunData, getAdjustedTime } from "./pacemanUtils";
 
@@ -9,6 +9,7 @@ import { processRunData, getAdjustedTime } from "./pacemanUtils";
  */
 export const usePacemanData = (settings) => {
   const [liveChannels, setLiveChannels] = useState([]);
+  const [lastFetchedChannels, setLastFetchedChannels] = useState([]);
   const [hiddenChannels, setHiddenChannels] = useState(
     JSON.parse(window.localStorage.getItem("hiddenChannels")) || []
   );
@@ -250,6 +251,7 @@ export const usePacemanData = (settings) => {
           // Store the full run data including split and time information
           console.log("Setting live channels:", limitedRuns);
           setLiveChannels(limitedRuns);
+          setLastFetchedChannels(limitedRuns);
           // Limit focussed channels based on setting (defaulting to 1)
           const maxFocussed = settings.maxFocussedChannels || 1;
           setFocussedChannels(
@@ -266,6 +268,112 @@ export const usePacemanData = (settings) => {
       clearInterval(interval);
     };
   }, [liveChannels, settings]);
+
+  // Update estimated times and scores every second
+  useEffect(() => {
+    if (lastFetchedChannels.length === 0) return;
+
+    const updateInterval = setInterval(() => {
+      const currentTimestamp = Date.now();
+
+      // Update each channel's estimated time and recalculate scores
+      const updatedChannels = lastFetchedChannels.map((channel) => {
+        if (
+          !channel.split ||
+          !channel.time ||
+          !channel.lastUpdated ||
+          !channel.debugInfo
+        ) {
+          return channel;
+        }
+
+        // Calculate elapsed time since last update
+        const elapsedMs = currentTimestamp - channel.lastUpdated;
+        const newEstimatedTime = channel.time + elapsedMs / 1000;
+
+        // Get the next split
+        const nextSplit = channel.debugInfo.nextSplit;
+
+        if (!nextSplit) {
+          return channel;
+        }
+
+        // Recalculate the next split score
+        const goodSplitTime =
+          channel.debugInfo.goodSplitTime ||
+          (nextSplit === "NETHER"
+            ? 90
+            : nextSplit === "S1"
+            ? 120
+            : nextSplit === "S2"
+            ? 240
+            : nextSplit === "BLIND"
+            ? 300
+            : nextSplit === "STRONGHOLD"
+            ? 400
+            : nextSplit === "END ENTER"
+            ? 420
+            : nextSplit === "FINISH"
+            ? 600
+            : 300);
+
+        const progressionBonus =
+          channel.debugInfo.progressionBonus ||
+          (nextSplit === "NETHER"
+            ? -0.1
+            : nextSplit === "S1"
+            ? 0.1
+            : nextSplit === "S2"
+            ? 0.7
+            : nextSplit === "BLIND"
+            ? 0.8
+            : nextSplit === "STRONGHOLD"
+            ? 0.85
+            : nextSplit === "END ENTER"
+            ? 0.9
+            : nextSplit === "FINISH"
+            ? 1.0
+            : 0.5);
+
+        // Calculate the score for the next split using the updated time
+        const nextSplitTimeFactor = newEstimatedTime / goodSplitTime;
+        const newNextSplitScore = nextSplitTimeFactor - progressionBonus;
+
+        // Determine which split to use for ranking
+        const useNextSplit =
+          newNextSplitScore > channel.debugInfo.currentSplitScore;
+        const finalScore = Math.max(
+          channel.debugInfo.currentSplitScore,
+          newNextSplitScore
+        );
+
+        // Update the debug info
+        const updatedDebugInfo = {
+          ...channel.debugInfo,
+          estimatedTime: newEstimatedTime,
+          nextSplitScore: newNextSplitScore,
+          score: finalScore,
+          usedSplit: useNextSplit ? nextSplit : channel.split,
+        };
+
+        return {
+          ...channel,
+          debugInfo: updatedDebugInfo,
+        };
+      });
+
+      // Sort the updated channels by their new scores
+      const sortedChannels = [...updatedChannels].sort((a, b) => {
+        if (!a.debugInfo || !b.debugInfo) return 0;
+        return a.debugInfo.score - b.debugInfo.score;
+      });
+
+      // Update the live channels
+      setLiveChannels(sortedChannels);
+    }, 1000);
+
+    return () => clearInterval(updateInterval);
+  }, [lastFetchedChannels]);
 
   return {
     liveChannels,
