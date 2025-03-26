@@ -305,7 +305,7 @@ function PlayerGrid({
                   time={channelData.time}
                   name={channelData.minecraftName || channelData.name}
                   pb={channelData.pb}
-                  splitDuration={channelData.splitDuration}
+                  debugInfo={channelData.debugInfo}
                 />
 
                 <TwitchPlayer
@@ -379,7 +379,7 @@ function PlayerGrid({
                 time={channelData.time}
                 name={channelData.minecraftName || channelData.name}
                 pb={channelData.pb}
-                splitDuration={channelData.splitDuration}
+                debugInfo={channelData.debugInfo}
               />
 
               <TwitchPlayer

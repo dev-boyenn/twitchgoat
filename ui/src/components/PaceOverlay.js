@@ -30,10 +30,10 @@ const splitLabels = {
  * @param {number} props.time - The time in seconds
  * @param {string} props.name - The runner's name
  * @param {number} props.pb - The runner's PB time
- * @param {number} props.splitDuration - How long the runner has been in this split (in seconds)
+ * @param {Object} props.debugInfo - Debug information about timing and ranking
  * @returns {JSX.Element} The pace overlay component
  */
-const PaceOverlay = ({ split, time, name, pb, splitDuration = 0 }) => {
+const PaceOverlay = ({ split, time, name, pb, debugInfo }) => {
   // Use state to track if image failed to load
   const [imageError, setImageError] = useState(false);
 
@@ -54,7 +54,6 @@ const PaceOverlay = ({ split, time, name, pb, splitDuration = 0 }) => {
         flexDirection: "column",
       }}
     >
-      {/* Split icon and time */}
       <Box
         sx={{
           display: "flex",
@@ -94,28 +93,31 @@ const PaceOverlay = ({ split, time, name, pb, splitDuration = 0 }) => {
         )}
         <Typography variant="body2">{formatTime(time)}</Typography>
       </Box>
-
-      {/* Estimated current time */}
-      {splitDuration > 0 && (
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: "5px",
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{ fontSize: "0.85rem", color: "#3498db" }}
-          >
-            Est: {formatTime(time + splitDuration)}
-          </Typography>
-        </Box>
-      )}
       {name && (
         <Typography variant="body2" sx={{ fontSize: "0.85rem" }}>
           {name} {pb ? `(PB: ${formatTime(pb)})` : ""}
         </Typography>
+      )}
+
+      {/* Debug information */}
+      {debugInfo && (
+        <>
+          <Typography
+            variant="body2"
+            sx={{ fontSize: "0.75rem", color: "#aaa" }}
+          >
+            Est:{" "}
+            {debugInfo.estimatedTime
+              ? formatTime(debugInfo.estimatedTime)
+              : "N/A"}
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{ fontSize: "0.75rem", color: "#aaa" }}
+          >
+            Using: {debugInfo.usedSplit || split}
+          </Typography>
+        </>
       )}
     </Box>
   );

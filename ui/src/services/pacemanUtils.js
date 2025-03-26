@@ -74,32 +74,72 @@ export const getNextSplit = (currentSplit) => {
  * @param {string} split - The split name
  * @param {number} time - The time in seconds
  * @param {number} lastUpdated - The lastUpdated timestamp from the API
- * @returns {number} The adjusted time value
+ * @param {boolean} returnDetails - Whether to return detailed information for debugging
+ * @returns {number|Object} The adjusted time value or detailed information
  */
-export const getAdjustedTime = (split, time, lastUpdated) => {
-  if (!split || !time) return Infinity;
+export const getAdjustedTime = (
+  split,
+  time,
+  lastUpdated,
+  returnDetails = false
+) => {
+  if (!split || !time) return returnDetails ? { score: Infinity } : Infinity;
 
   // Calculate how close the time is to the good split time for the current split
   const currentSplitTimeFactor = time / goodsplits[split];
   const currentSplitScore = currentSplitTimeFactor - progressionBonus[split];
 
   // If there's no lastUpdated timestamp, just return the current split score
-  if (!lastUpdated) return currentSplitScore;
+  if (!lastUpdated) {
+    return returnDetails
+      ? {
+          score: currentSplitScore,
+          usedSplit: split,
+          currentTime: time,
+          estimatedTime: null,
+          nextSplit: null,
+        }
+      : currentSplitScore;
+  }
 
   // Get the next split in the progression
   const nextSplit = getNextSplit(split);
-  if (!nextSplit) return currentSplitScore; // If there's no next split, return the current split score
+  if (!nextSplit) {
+    return returnDetails
+      ? {
+          score: currentSplitScore,
+          usedSplit: split,
+          currentTime: time,
+          estimatedTime: null,
+          nextSplit: null,
+        }
+      : currentSplitScore;
+  }
 
   // Calculate the current time based on the lastUpdated timestamp
   const currentTimeMs = calculateCurrentTime(lastUpdated);
-  const currentTimeSec = currentTimeMs / 1000 + time; // Add the current split time
+  const estimatedTimeSec = currentTimeMs / 1000 + time; // Add the current split time
 
   // Calculate the score for the next split using the current time
-  const nextSplitTimeFactor = currentTimeSec / goodsplits[nextSplit];
+  const nextSplitTimeFactor = estimatedTimeSec / goodsplits[nextSplit];
   const nextSplitScore = nextSplitTimeFactor - progressionBonus[nextSplit];
 
+  // Determine which split to use for ranking
+  const useNextSplit = nextSplitScore > currentSplitScore;
+  const finalScore = Math.max(currentSplitScore, nextSplitScore);
+
+  if (returnDetails) {
+    return {
+      score: finalScore,
+      usedSplit: useNextSplit ? nextSplit : split,
+      currentTime: time,
+      estimatedTime: estimatedTimeSec,
+      nextSplit: nextSplit,
+    };
+  }
+
   // Return the worse (higher) score between the current split and the next split
-  return Math.max(currentSplitScore, nextSplitScore);
+  return finalScore;
 };
 
 /**

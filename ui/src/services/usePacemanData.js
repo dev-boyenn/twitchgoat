@@ -130,12 +130,23 @@ export const usePacemanData = (settings) => {
         // Log the runs with PB times
         console.log("Runs with PB times:", runsWithPb);
 
-        // Sort runs by adjusted time, including lastUpdated timestamp
-        const orderedRuns = runsWithPb.sort((a, b) => {
-          return (
-            getAdjustedTime(a.split, a.time, a.lastUpdated) -
-            getAdjustedTime(b.split, b.time, b.lastUpdated)
+        // Get detailed timing information for each run
+        const runsWithDetails = runsWithPb.map((run) => {
+          const details = getAdjustedTime(
+            run.split,
+            run.time,
+            run.lastUpdated,
+            true
           );
+          return {
+            ...run,
+            debugInfo: details, // Add debug information
+          };
+        });
+
+        // Sort runs by adjusted time, including lastUpdated timestamp
+        const orderedRuns = runsWithDetails.sort((a, b) => {
+          return a.debugInfo.score - b.debugInfo.score;
         });
 
         // Use the minimum total channels setting (defaulting to 3)
