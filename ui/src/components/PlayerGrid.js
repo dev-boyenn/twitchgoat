@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "./PlayerGrid.css";
 import { TwitchPlayer } from "react-twitch-embed";
 import { IconButton, Box } from "@mui/material";
@@ -87,20 +87,158 @@ function PlayerGrid({
     };
   }, [handleKeyPress]);
 
-  let numColumns;
-  let numRows;
-  if (focussedChannels.length > 0) {
-    numColumns = channels.length - focussedChannels.length;
-    numRows = 1;
-  } else {
-    numColumns = Math.ceil(Math.sqrt(channels.length));
-    numRows = Math.ceil(channels.length / numColumns);
-  }
-  console.log(numColumns, numRows);
+  // Calculate the number of unfocused channels
+  const unfocusedChannels = channels.filter(
+    (ch) => focussedChannels.indexOf(ch.liveAccount) === -1
+  );
+
+  // State to store window dimensions
+  const [windowDimensions, setWindowDimensions] = useState({
+    width: typeof window !== "undefined" ? window.innerWidth : 1280,
+    height: typeof window !== "undefined" ? window.innerHeight : 720,
+  });
+
+  // Update window dimensions when window size changes
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    // Add event listener for window resize
+    if (typeof window !== "undefined") {
+      window.addEventListener("resize", handleResize);
+
+      // Initial calculation
+      handleResize();
+
+      // Cleanup
+      return () => {
+        window.removeEventListener("resize", handleResize);
+      };
+    }
+  }, []);
+
+  // Calculate optimal grid layout for unfocused channels
+  // The goal is to maintain 16:9 aspect ratio for each stream container
+  const calculateOptimalGrid = (
+    numChannels,
+    containerWidth,
+    containerHeight
+  ) => {
+    if (numChannels <= 0) return { columns: 1, rows: 1 };
+    if (numChannels === 1) return { columns: 1, rows: 1 };
+    if (numChannels === 2) return { columns: 2, rows: 1 };
+
+    // Calculate container aspect ratio
+    const containerAspectRatio = containerWidth / containerHeight;
+
+    // Target aspect ratio for each cell is 16:9
+    const targetCellAspectRatio = 16 / 9;
+
+    // Calculate the ideal number of columns based on the container aspect ratio
+    // and the target cell aspect ratio
+    let bestColumns = 1;
+    let bestRows = numChannels;
+    let bestScore = Number.MAX_VALUE;
+
+    // Try different column counts to find the optimal layout
+    for (let cols = 1; cols <= numChannels; cols++) {
+      const rows = Math.ceil(numChannels / cols);
+
+      // Calculate the cell dimensions
+      const cellWidth = containerWidth / cols;
+      const cellHeight = containerHeight / rows;
+      const cellAspectRatio = cellWidth / cellHeight;
+
+      // Calculate how far this layout is from the ideal 16:9 aspect ratio
+      const score = Math.abs(cellAspectRatio - targetCellAspectRatio);
+
+      // If this layout is better than the previous best, update the best layout
+      if (score < bestScore) {
+        bestScore = score;
+        bestColumns = cols;
+        bestRows = rows;
+      }
+    }
+
+    return { columns: bestColumns, rows: bestRows };
+  };
+
+  // Calculate dynamic height distribution based on number of channels
+  // The goal is to maintain 16:9 aspect ratio for each stream container
+  const calculateHeightDistribution = () => {
+    if (focussedChannels.length === 0 || unfocusedChannels.length === 0) {
+      return { focusedHeight: "100vh", unfocusedHeight: "0vh" };
+    }
+
+    // Calculate the total available height
+    const totalHeight = windowDimensions.height;
+    const totalWidth = windowDimensions.width;
+
+    // Calculate the optimal grid layout for unfocused channels
+    const unfocusedGrid = calculateOptimalGrid(
+      unfocusedChannels.length,
+      totalWidth,
+      totalHeight / 2 // Start with a 50/50 split as a baseline
+    );
+
+    // Calculate the optimal grid layout for focused channels
+    const focusedGrid = calculateOptimalGrid(
+      focussedChannels.length,
+      totalWidth,
+      totalHeight / 2 // Start with a 50/50 split as a baseline
+    );
+
+    // Calculate the ideal height for each section based on the grid layout
+    // and the 16:9 aspect ratio
+    const idealUnfocusedCellWidth = totalWidth / unfocusedGrid.columns;
+    const idealUnfocusedCellHeight = idealUnfocusedCellWidth * (9 / 16);
+    const idealUnfocusedHeight = idealUnfocusedCellHeight * unfocusedGrid.rows;
+
+    const idealFocusedCellWidth = totalWidth / focusedGrid.columns;
+    const idealFocusedCellHeight = idealFocusedCellWidth * (9 / 16);
+    const idealFocusedHeight = idealFocusedCellHeight * focusedGrid.rows;
+
+    // Calculate the ratio of focused to unfocused height
+    const totalIdealHeight = idealFocusedHeight + idealUnfocusedHeight;
+    const focusedRatio = Math.min(
+      0.8,
+      Math.max(0.4, idealFocusedHeight / totalIdealHeight)
+    );
+    const unfocusedRatio = 1 - focusedRatio;
+
+    // Convert to vh units
+    const focusedHeight = `${Math.round(focusedRatio * 100)}vh`;
+    const unfocusedHeight = `${Math.round(unfocusedRatio * 100)}vh`;
+
+    return { focusedHeight, unfocusedHeight };
+  };
+
+  // Calculate the height distribution
+  const { focusedHeight, unfocusedHeight } = calculateHeightDistribution();
+
+  // Calculate the grid layout for focused and unfocused channels
+  const focusedGrid = calculateOptimalGrid(
+    focussedChannels.length,
+    windowDimensions.width,
+    windowDimensions.height * (parseInt(focusedHeight) / 100)
+  );
+
+  const unfocusedGrid = calculateOptimalGrid(
+    unfocusedChannels.length,
+    windowDimensions.width,
+    windowDimensions.height * (parseInt(unfocusedHeight) / 100)
+  );
+
   // Create the grid template columns and rows CSS properties
-  const gridTemplateColumns = `repeat(${numColumns}, 1fr)`;
-  const gridTemplateRows = `repeat(${numRows}, 1fr)`;
-  const focussedChannelsColumns = `repeat(${focussedChannels.length}, 1fr)`;
+  const focusedGridTemplateColumns = `repeat(${focusedGrid.columns}, 1fr)`;
+  const focusedGridTemplateRows = `repeat(${focusedGrid.rows}, 1fr)`;
+
+  const unfocusedGridTemplateColumns = `repeat(${unfocusedGrid.columns}, 1fr)`;
+  const unfocusedGridTemplateRows = `repeat(${unfocusedGrid.rows}, 1fr)`;
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -109,11 +247,12 @@ function PlayerGrid({
           style={{
             display: "grid",
             backgroundColor: "black",
-            height: "80vh",
+            height: focusedHeight,
             margin: 0,
             padding: 0,
-            gridTemplateColumns: focussedChannelsColumns,
-            gridTemplateRows: `repeat(1, 1fr)`,
+            gridTemplateColumns: focusedGridTemplateColumns,
+            gridTemplateRows: focusedGridTemplateRows,
+            gap: "2px", // Add a small gap between grid items
           }}
         >
           {focussedChannels.map((channelName, index) => {
@@ -183,23 +322,20 @@ function PlayerGrid({
           })}
         </div>
       )}
-      <div
-        style={{
-          display: "grid",
-          backgroundColor: "black",
-          height: focussedChannels.length > 0 ? "20vh" : "100vh",
-          margin: 0,
-          padding: 0,
-          gridTemplateColumns,
-          gridTemplateRows,
-        }}
-      >
-        {channels
-          .filter(
-            (channelData) =>
-              focussedChannels.indexOf(channelData.liveAccount) === -1
-          )
-          .map((channelData, index) => (
+      {unfocusedChannels.length > 0 && (
+        <div
+          style={{
+            display: "grid",
+            backgroundColor: "black",
+            height: focussedChannels.length > 0 ? unfocusedHeight : "100vh",
+            margin: 0,
+            padding: 0,
+            gridTemplateColumns: unfocusedGridTemplateColumns,
+            gridTemplateRows: unfocusedGridTemplateRows,
+            gap: "2px", // Add a small gap between grid items
+          }}
+        >
+          {unfocusedChannels.map((channelData, index) => (
             <div
               style={{ width: "100%", height: "100%", position: "relative" }}
               className="twitch-player"
@@ -256,7 +392,8 @@ function PlayerGrid({
               />
             </div>
           ))}
-      </div>
+        </div>
+      )}
     </Box>
   );
 }
