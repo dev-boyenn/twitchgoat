@@ -105,30 +105,26 @@ export const processRunData = (run, previousRunData = null) => {
   const minecraftName = run.nickname; // This is the Minecraft account name
   let split = null;
   let time = null;
-  let splitStartTimestamp = null;
   let splitDuration = 0;
 
   // Get the current server time
   const currentTimestamp = Date.now();
 
-  // Determine the current split and its start time
+  // Determine the current split and its time
   if (run.eventList.find((e) => e.eventId === "rsg.enter_end")) {
     split = "END ENTER";
     const event = run.eventList.find((e) => e.eventId === "rsg.enter_end");
     time = event.igt;
-    splitStartTimestamp = event.timestamp;
   } else if (run.eventList.find((e) => e.eventId === "rsg.enter_stronghold")) {
     split = "STRONGHOLD";
     const event = run.eventList.find(
       (e) => e.eventId === "rsg.enter_stronghold"
     );
     time = event.igt;
-    splitStartTimestamp = event.timestamp;
   } else if (run.eventList.find((e) => e.eventId === "rsg.first_portal")) {
     split = "BLIND";
     const event = run.eventList.find((e) => e.eventId === "rsg.first_portal");
     time = event.igt;
-    splitStartTimestamp = event.timestamp;
   } else if (
     run.eventList.find((e) => e.eventId === "rsg.enter_fortress") &&
     run.eventList.find((e) => e.eventId === "rsg.enter_bastion")
@@ -144,10 +140,8 @@ export const processRunData = (run, previousRunData = null) => {
     // Use the later of the two events
     if (fortressEvent.igt > bastionEvent.igt) {
       time = fortressEvent.igt;
-      splitStartTimestamp = fortressEvent.timestamp;
     } else {
       time = bastionEvent.igt;
-      splitStartTimestamp = bastionEvent.timestamp;
     }
   } else if (
     run.eventList.find(
@@ -161,27 +155,30 @@ export const processRunData = (run, previousRunData = null) => {
         e.eventId === "rsg.enter_fortress" || e.eventId === "rsg.enter_bastion"
     );
     time = event.igt;
-    splitStartTimestamp = event.timestamp;
   } else if (run.eventList.find((e) => e.eventId === "rsg.enter_nether")) {
     split = "NETHER";
     const event = run.eventList.find((e) => e.eventId === "rsg.enter_nether");
     time = event.igt;
-    splitStartTimestamp = event.timestamp;
   }
 
   // Calculate how long the runner has been in this split
-  if (splitStartTimestamp) {
-    // If we have a timestamp for the split start, calculate duration from that
-    splitDuration = (currentTimestamp - splitStartTimestamp) / 1000; // Convert to seconds
-  } else if (previousRunData && previousRunData.split === split) {
-    // If we don't have a timestamp but we have previous data with the same split,
-    // increment the previous duration
-    splitDuration = previousRunData.splitDuration + 10; // Add 10 seconds (polling interval)
-  }
+  if (run.lastUpdated) {
+    // If the split is the same as before, calculate duration based on lastUpdated
+    if (previousRunData && previousRunData.split === split) {
+      // Calculate time since the last update
+      const timeSinceLastUpdate = (currentTimestamp - run.lastUpdated) / 1000; // Convert to seconds
 
-  // If we have previous data but the split has changed, reset the duration
-  if (previousRunData && previousRunData.split !== split) {
-    splitDuration = 0;
+      // Add the previous duration plus the time since the last update
+      splitDuration = previousRunData.splitDuration + timeSinceLastUpdate;
+    } else {
+      // If the split has changed or there's no previous data,
+      // assume the runner just entered this split
+      splitDuration = (currentTimestamp - run.lastUpdated) / 1000; // Convert to seconds
+    }
+  } else if (previousRunData && previousRunData.split === split) {
+    // If we don't have lastUpdated but we have previous data with the same split,
+    // increment the previous duration by the polling interval
+    splitDuration = previousRunData.splitDuration + 10; // Add 10 seconds (polling interval)
   }
 
   return {
@@ -190,7 +187,6 @@ export const processRunData = (run, previousRunData = null) => {
     minecraftName,
     split,
     time: time ? time / 1000 : null,
-    splitStartTimestamp,
     splitDuration,
     pb: previousRunData ? previousRunData.pb : null, // Preserve PB if available
   };
