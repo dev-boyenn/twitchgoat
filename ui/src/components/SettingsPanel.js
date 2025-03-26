@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Checkbox, Slider, Typography } from "@mui/material";
+import { Box, Checkbox, Slider, Typography, TextField } from "@mui/material";
 
 /**
  * Settings panel component
@@ -72,6 +72,27 @@ const SettingsPanel = ({ settings, setSettings }) => {
           min={1}
           max={20}
           valueLabelDisplay="auto"
+        />
+      </Box>
+
+      <Box sx={{ marginTop: 3 }}>
+        <Typography variant="subtitle1" gutterBottom>
+          Filter Runners (Minecraft Usernames)
+        </Typography>
+        <Typography variant="caption" sx={{ display: "block", mb: 1 }}>
+          Enter one username per line or paste from PacemanBot format
+        </Typography>
+        <TextField
+          multiline
+          rows={6}
+          fullWidth
+          placeholder="boyenn&#10;topimpapig&#10;emia"
+          value={settings.filteredRunners}
+          onChange={(e) =>
+            setSettings({ ...settings, filteredRunners: e.target.value })
+          }
+          variant="outlined"
+          size="small"
         />
       </Box>
     </Box>

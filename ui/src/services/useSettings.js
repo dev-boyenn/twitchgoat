@@ -9,6 +9,7 @@ const defaultSettings = {
   minTotalChannels: 2,
   unmuteFocussedChannels: false,
   switchChatOnFocus: false,
+  filteredRunners: "", // New setting for filtered runners
 };
 
 /**

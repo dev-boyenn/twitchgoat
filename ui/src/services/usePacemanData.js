@@ -35,14 +35,57 @@ export const usePacemanData = (settings) => {
   );
 
   // Fetch PaceMan data
+  // Function to parse filtered runners from settings
+  const parseFilteredRunners = (filteredRunnersText) => {
+    if (!filteredRunnersText || filteredRunnersText.trim() === "") {
+      return [];
+    }
+
+    // Split by lines
+    const lines = filteredRunnersText.split("\n");
+
+    // Extract usernames from each line
+    return lines
+      .map((line) => {
+        // Check if line is in PacemanBot format (username:numbers/numbers/etc.)
+        const match = line.match(/^([^:]+):/);
+        if (match) {
+          // Return just the username part
+          return match[1].trim();
+        }
+        // Otherwise, return the whole line (simple format)
+        return line.trim();
+      })
+      .filter((username) => username !== ""); // Remove empty lines
+  };
+
   useEffect(() => {
     async function getPaceChannels() {
       try {
         const data = await fetchLiveRuns();
 
-        const liveRuns = data.filter(
+        // Parse filtered runners
+        const filteredRunnersList = parseFilteredRunners(
+          settings.filteredRunners
+        );
+
+        // Filter live runs
+        let liveRuns = data.filter(
           (run) => run.user.liveAccount != null && run.isHidden === false
         );
+
+        // Apply additional filtering if filteredRunnersList is not empty
+        if (filteredRunnersList.length > 0) {
+          liveRuns = liveRuns.filter((run) => {
+            // Check if the runner's Minecraft nickname is in the filtered list
+            return filteredRunnersList.some(
+              (username) =>
+                run.nickname &&
+                run.nickname.toLowerCase() === username.toLowerCase()
+            );
+          });
+        }
+
         const hiddenRuns = data.filter(
           (run) => run.user.liveAccount != null && run.isHidden === true
         );
