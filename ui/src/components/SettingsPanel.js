@@ -1,5 +1,12 @@
 import React from "react";
-import { Box, Checkbox, Slider, Typography, TextField } from "@mui/material";
+import {
+  Box,
+  Checkbox,
+  Slider,
+  Typography,
+  TextField,
+  FormControlLabel,
+} from "@mui/material";
 
 /**
  * Settings panel component
