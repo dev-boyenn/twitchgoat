@@ -2,10 +2,13 @@ import React from "react";
 import {
   Box,
   Checkbox,
-  Slider,
   Typography,
   TextField,
   FormControlLabel,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 
 /**
@@ -16,37 +19,12 @@ import {
  * @returns {JSX.Element} The settings panel component
  */
 const SettingsPanel = ({ settings, setSettings }) => {
-  // Create a memoized version of setSettings to prevent unnecessary re-renders
-  const memoizedSetSettings = React.useCallback(
-    (newSettings) => {
-      if (typeof newSettings === "function") {
-        setSettings((prevSettings) => {
-          const updatedSettings = newSettings(prevSettings);
-          // Force a delay to ensure the state update is processed
-          setTimeout(() => {
-            // This is just to trigger a re-render after the state has been updated
-            setSettings((current) => ({ ...current }));
-          }, 50);
-          return updatedSettings;
-        });
-      } else {
-        setSettings(newSettings);
-        // Force a delay to ensure the state update is processed
-        setTimeout(() => {
-          // This is just to trigger a re-render after the state has been updated
-          setSettings((current) => ({ ...current }));
-        }, 50);
-      }
-    },
-    [setSettings]
-  );
-
-  // Handle slider change
-  const handleSliderChange = (name) => (e, value) => {
-    memoizedSetSettings((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+  // Handle dropdown change
+  const handleChange = (name) => (event) => {
+    setSettings({
+      ...settings,
+      [name]: event.target.value,
+    });
   };
   return (
     <Box sx={{ width: "100%", margin: 2 }}>
@@ -110,41 +88,71 @@ const SettingsPanel = ({ settings, setSettings }) => {
 
       {/* Max Focussed Channels */}
       <Box sx={{ marginBottom: 2 }}>
-        <Typography variant="subtitle1">Max Focussed Channels</Typography>
-        <Slider
-          value={settings.maxFocussedChannels || 2}
-          onChange={handleSliderChange("maxFocussedChannels")}
-          step={1}
-          min={1}
-          max={10}
-          valueLabelDisplay="auto"
-        />
+        <FormControl fullWidth>
+          <InputLabel id="max-focussed-channels-label">
+            Max Focussed Channels
+          </InputLabel>
+          <Select
+            labelId="max-focussed-channels-label"
+            value={settings.maxFocussedChannels || 2}
+            label="Max Focussed Channels"
+            onChange={handleChange("maxFocussedChannels")}
+          >
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+              <MenuItem key={num} value={num}>
+                {num}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Box>
 
       {/* Max Total Channels */}
       <Box sx={{ marginBottom: 2 }}>
-        <Typography variant="subtitle1">Max Total Channels</Typography>
-        <Slider
-          value={settings.maxTotalChannels || 10}
-          onChange={handleSliderChange("maxTotalChannels")}
-          step={1}
-          min={1}
-          max={20}
-          valueLabelDisplay="auto"
-        />
+        <FormControl fullWidth>
+          <InputLabel id="max-total-channels-label">
+            Max Total Channels
+          </InputLabel>
+          <Select
+            labelId="max-total-channels-label"
+            value={settings.maxTotalChannels || 10}
+            label="Max Total Channels"
+            onChange={handleChange("maxTotalChannels")}
+          >
+            {[
+              1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+              20,
+            ].map((num) => (
+              <MenuItem key={num} value={num}>
+                {num}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Box>
 
       {/* Minimum Total Channels */}
       <Box sx={{ marginBottom: 2 }}>
-        <Typography variant="subtitle1">Minimum Total Channels</Typography>
-        <Slider
-          value={settings.minTotalChannels || 3}
-          onChange={handleSliderChange("minTotalChannels")}
-          step={1}
-          min={1}
-          max={20}
-          valueLabelDisplay="auto"
-        />
+        <FormControl fullWidth>
+          <InputLabel id="min-total-channels-label">
+            Minimum Total Channels
+          </InputLabel>
+          <Select
+            labelId="min-total-channels-label"
+            value={settings.minTotalChannels || 3}
+            label="Minimum Total Channels"
+            onChange={handleChange("minTotalChannels")}
+          >
+            {[
+              1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+              20,
+            ].map((num) => (
+              <MenuItem key={num} value={num}>
+                {num}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Box>
 
       {/* Filter Runners */}
