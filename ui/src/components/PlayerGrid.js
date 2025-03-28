@@ -266,7 +266,7 @@ function PlayerGrid({
               <div
                 style={{ width: "100%", height: "100%", position: "relative" }}
                 className="twitch-player"
-                key={channelData.liveAccount}
+                key={index}
               >
                 {/* Chat Icon - Only visible on hover with recent movement */}
                 <div
@@ -342,7 +342,7 @@ function PlayerGrid({
             <div
               style={{ width: "100%", height: "100%", position: "relative" }}
               className="twitch-player"
-              key={channelData.liveAccount}
+              key={index}
             >
               {/* Chat Icon - Only visible on hover with recent movement */}
               <div
