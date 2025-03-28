@@ -8,8 +8,8 @@ export const goodsplits = {
   S1: 120,
   S2: 240,
   BLIND: 300,
-  STRONGHOLD: 400,
-  "END ENTER": 420,
+  STRONGHOLD: 360,
+  "END ENTER": 380,
   FINISH: 600, // Added finish split for completed runs
 };
 
@@ -30,8 +30,8 @@ export const progressionBonus = {
   S1: 0.2,
   S2: 0.7,
   BLIND: 0.8,
-  STRONGHOLD: 0.85,
-  "END ENTER": 0.9,
+  STRONGHOLD: 0.82,
+  "END ENTER": 0.85,
   FINISH: 1.0, // Added finish split bonus
 };
 
