@@ -11,48 +11,80 @@ import { Box, Checkbox, Slider, Typography, TextField } from "@mui/material";
 const SettingsPanel = ({ settings, setSettings }) => {
   return (
     <Box sx={{ width: "100%", margin: 2 }}>
-      <Box>
-        <Checkbox
-          onChange={(e, v) =>
-            setSettings({
-              ...settings,
-              unmuteFocussedChannels: v,
-            })
+      <Typography variant="h5" gutterBottom>
+        Settings
+      </Typography>
+
+      {/* Unmute Focussed Channels */}
+      <Box sx={{ marginBottom: 2 }}>
+        <FormControlLabel
+          control={
+            <Checkbox
+              onChange={(e, v) =>
+                setSettings({
+                  ...settings,
+                  unmuteFocussedChannels: v,
+                })
+              }
+              checked={settings.unmuteFocussedChannels}
+            />
           }
-          checked={settings.unmuteFocussedChannels}
+          label="Unmute Focussed Channels"
         />
-        Unmute focussed channels
       </Box>
-      <Box>
-        <Checkbox
-          onChange={(e, v) =>
-            setSettings({
-              ...settings,
-              switchChatOnFocus: v,
-            })
+
+      {/* Switch Chat on Focus */}
+      <Box sx={{ marginBottom: 2 }}>
+        <FormControlLabel
+          control={
+            <Checkbox
+              onChange={(e, v) =>
+                setSettings({
+                  ...settings,
+                  switchChatOnFocus: v,
+                })
+              }
+              checked={settings.switchChatOnFocus}
+            />
           }
-          checked={settings.switchChatOnFocus}
+          label="Switch Chat to First Focussed Channel"
         />
-        Switch Chat to first focussed channel
       </Box>
-      <Box>
-        <Checkbox
-          onChange={(e, v) =>
-            setSettings({
-              ...settings,
-              showDebugInfo: v,
-            })
+
+      {/* Show Debug Information */}
+      <Box sx={{ marginBottom: 2 }}>
+        <FormControlLabel
+          control={
+            <Checkbox
+              onChange={(e, v) =>
+                setSettings({
+                  ...settings,
+                  showDebugInfo: v,
+                })
+              }
+              checked={settings.showDebugInfo}
+            />
           }
-          checked={settings.showDebugInfo}
+          label="Show Debug Information on Pace Overlay"
         />
-        Show debug information on pace overlay
       </Box>
-      <Box sx={{ marginTop: 2 }}>
+
+      {/* Max Focussed Channels */}
+      <Box sx={{ marginBottom: 2 }}>
         <Typography variant="subtitle1">Max Focussed Channels</Typography>
         <Slider
           value={settings.maxFocussedChannels || 2}
           onChange={(e, value) =>
-            setSettings({ ...settings, maxFocussedChannels: value })
+            setSettings((prevSettings) => ({
+              ...prevSettings,
+              maxFocussedChannels: value,
+            }))
+          }
+          onChangeCommitted={(e, value) =>
+            setSettings((prevSettings) => ({
+              ...prevSettings,
+              maxFocussedChannels: value,
+            }))
           }
           step={1}
           min={1}
@@ -60,25 +92,23 @@ const SettingsPanel = ({ settings, setSettings }) => {
           valueLabelDisplay="auto"
         />
       </Box>
-      <Box sx={{ marginTop: 2 }}>
+
+      {/* Max Total Channels */}
+      <Box sx={{ marginBottom: 2 }}>
         <Typography variant="subtitle1">Max Total Channels</Typography>
         <Slider
           value={settings.maxTotalChannels || 10}
           onChange={(e, value) =>
-            setSettings({ ...settings, maxTotalChannels: value })
+            setSettings((prevSettings) => ({
+              ...prevSettings,
+              maxTotalChannels: value,
+            }))
           }
-          step={1}
-          min={1}
-          max={20}
-          valueLabelDisplay="auto"
-        />
-      </Box>
-      <Box sx={{ marginTop: 2 }}>
-        <Typography variant="subtitle1">Minimum Total Channels</Typography>
-        <Slider
-          value={settings.minTotalChannels || 3}
-          onChange={(e, value) =>
-            setSettings({ ...settings, minTotalChannels: value })
+          onChangeCommitted={(e, value) =>
+            setSettings((prevSettings) => ({
+              ...prevSettings,
+              maxTotalChannels: value,
+            }))
           }
           step={1}
           min={1}
@@ -87,6 +117,31 @@ const SettingsPanel = ({ settings, setSettings }) => {
         />
       </Box>
 
+      {/* Minimum Total Channels */}
+      <Box sx={{ marginBottom: 2 }}>
+        <Typography variant="subtitle1">Minimum Total Channels</Typography>
+        <Slider
+          value={settings.minTotalChannels || 3}
+          onChange={(e, value) =>
+            setSettings((prevSettings) => ({
+              ...prevSettings,
+              minTotalChannels: value,
+            }))
+          }
+          onChangeCommitted={(e, value) =>
+            setSettings((prevSettings) => ({
+              ...prevSettings,
+              minTotalChannels: value,
+            }))
+          }
+          step={1}
+          min={1}
+          max={20}
+          valueLabelDisplay="auto"
+        />
+      </Box>
+
+      {/* Filter Runners */}
       <Box sx={{ marginTop: 3 }}>
         <Typography variant="subtitle1" gutterBottom>
           Filter Runners (Minecraft Usernames)
