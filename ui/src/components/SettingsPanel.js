@@ -16,6 +16,37 @@ import {
  * @returns {JSX.Element} The settings panel component
  */
 const SettingsPanel = ({ settings, setSettings }) => {
+  // Local state to handle slider values before committing them to settings
+  const [sliderValues, setSliderValues] = React.useState({
+    maxFocussedChannels: settings.maxFocussedChannels || 2,
+    maxTotalChannels: settings.maxTotalChannels || 10,
+    minTotalChannels: settings.minTotalChannels || 3,
+  });
+
+  // Update local state when settings change
+  React.useEffect(() => {
+    setSliderValues({
+      maxFocussedChannels: settings.maxFocussedChannels || 2,
+      maxTotalChannels: settings.maxTotalChannels || 10,
+      minTotalChannels: settings.minTotalChannels || 3,
+    });
+  }, [settings]);
+
+  // Handle slider change (updates local state only)
+  const handleSliderChange = (name) => (e, value) => {
+    setSliderValues((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Handle slider change committed (updates settings)
+  const handleSliderChangeCommitted = (name) => (e, value) => {
+    setSettings((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
   return (
     <Box sx={{ width: "100%", margin: 2 }}>
       <Typography variant="h5" gutterBottom>
@@ -80,19 +111,9 @@ const SettingsPanel = ({ settings, setSettings }) => {
       <Box sx={{ marginBottom: 2 }}>
         <Typography variant="subtitle1">Max Focussed Channels</Typography>
         <Slider
-          value={settings.maxFocussedChannels || 2}
-          onChange={(e, value) =>
-            setSettings((prevSettings) => ({
-              ...prevSettings,
-              maxFocussedChannels: value,
-            }))
-          }
-          onChangeCommitted={(e, value) =>
-            setSettings((prevSettings) => ({
-              ...prevSettings,
-              maxFocussedChannels: value,
-            }))
-          }
+          value={sliderValues.maxFocussedChannels}
+          onChange={handleSliderChange("maxFocussedChannels")}
+          onChangeCommitted={handleSliderChangeCommitted("maxFocussedChannels")}
           step={1}
           min={1}
           max={10}
@@ -104,19 +125,9 @@ const SettingsPanel = ({ settings, setSettings }) => {
       <Box sx={{ marginBottom: 2 }}>
         <Typography variant="subtitle1">Max Total Channels</Typography>
         <Slider
-          value={settings.maxTotalChannels || 10}
-          onChange={(e, value) =>
-            setSettings((prevSettings) => ({
-              ...prevSettings,
-              maxTotalChannels: value,
-            }))
-          }
-          onChangeCommitted={(e, value) =>
-            setSettings((prevSettings) => ({
-              ...prevSettings,
-              maxTotalChannels: value,
-            }))
-          }
+          value={sliderValues.maxTotalChannels}
+          onChange={handleSliderChange("maxTotalChannels")}
+          onChangeCommitted={handleSliderChangeCommitted("maxTotalChannels")}
           step={1}
           min={1}
           max={20}
@@ -128,19 +139,9 @@ const SettingsPanel = ({ settings, setSettings }) => {
       <Box sx={{ marginBottom: 2 }}>
         <Typography variant="subtitle1">Minimum Total Channels</Typography>
         <Slider
-          value={settings.minTotalChannels || 3}
-          onChange={(e, value) =>
-            setSettings((prevSettings) => ({
-              ...prevSettings,
-              minTotalChannels: value,
-            }))
-          }
-          onChangeCommitted={(e, value) =>
-            setSettings((prevSettings) => ({
-              ...prevSettings,
-              minTotalChannels: value,
-            }))
-          }
+          value={sliderValues.minTotalChannels}
+          onChange={handleSliderChange("minTotalChannels")}
+          onChangeCommitted={handleSliderChangeCommitted("minTotalChannels")}
           step={1}
           min={1}
           max={20}
