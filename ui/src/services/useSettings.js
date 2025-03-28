@@ -5,8 +5,7 @@ import { useState, useEffect } from "react";
  */
 const defaultSettings = {
   maxFocussedChannels: 1,
-  maxTotalChannels: 2,
-  minTotalChannels: 2,
+  totalChannels: 3,
   unmuteFocussedChannels: false,
   switchChatOnFocus: false,
   filteredRunners: "", // New setting for filtered runners

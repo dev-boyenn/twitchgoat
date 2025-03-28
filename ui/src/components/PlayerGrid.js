@@ -266,7 +266,7 @@ function PlayerGrid({
               <div
                 style={{ width: "100%", height: "100%", position: "relative" }}
                 className="twitch-player"
-                key={channelData.liveAccount + index}
+                key={channelData.liveAccount}
               >
                 {/* Chat Icon - Only visible on hover with recent movement */}
                 <div
@@ -313,7 +313,7 @@ function PlayerGrid({
                 <TwitchPlayer
                   playsInline
                   allowFullscreen
-                  channel={channelData.liveAccount}
+                  channel={channelData.liveAccount || ""}
                   id={"focussed" + index.toString()}
                   width={"100%"}
                   height={"100%"}
@@ -342,7 +342,7 @@ function PlayerGrid({
             <div
               style={{ width: "100%", height: "100%", position: "relative" }}
               className="twitch-player"
-              key={channelData.liveAccount + index}
+              key={channelData.liveAccount}
             >
               {/* Chat Icon - Only visible on hover with recent movement */}
               <div
@@ -389,7 +389,7 @@ function PlayerGrid({
               <TwitchPlayer
                 playsInline
                 allowFullscreen
-                channel={channelData.liveAccount}
+                channel={channelData.liveAccount || ""}
                 id={"unfocussed" + index.toString()}
                 width={"100%"}
                 height={"100%"}

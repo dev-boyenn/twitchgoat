@@ -133,19 +133,19 @@ const SettingsPanel = ({ settings, setSettings }) => {
         </Grid>
       </Box>
 
-      {/* Max Total Channels */}
+      {/* Total Channels */}
       <Box sx={{ marginBottom: 2 }}>
-        <Typography variant="subtitle1">Max Total Channels</Typography>
+        <Typography variant="subtitle1">Total Channels</Typography>
         <Grid container alignItems="center" spacing={1}>
           <Grid item>
             <IconButton
               size="small"
               onClick={() => {
-                const currentValue = settings.maxTotalChannels || 10;
+                const currentValue = settings.totalChannels || 3;
                 if (currentValue > 1) {
                   setSettings({
                     ...settings,
-                    maxTotalChannels: currentValue - 1,
+                    totalChannels: currentValue - 1,
                   });
                 }
               }}
@@ -155,11 +155,11 @@ const SettingsPanel = ({ settings, setSettings }) => {
           </Grid>
           <Grid item>
             <TextField
-              value={settings.maxTotalChannels || 10}
+              value={settings.totalChannels || 3}
               onChange={(e) => {
                 const value = parseInt(e.target.value, 10);
                 if (!isNaN(value) && value >= 1 && value <= 20) {
-                  setSettings({ ...settings, maxTotalChannels: value });
+                  setSettings({ ...settings, totalChannels: value });
                 }
               }}
               inputProps={{ min: 1, max: 20, style: { textAlign: "center" } }}
@@ -172,65 +172,11 @@ const SettingsPanel = ({ settings, setSettings }) => {
             <IconButton
               size="small"
               onClick={() => {
-                const currentValue = settings.maxTotalChannels || 10;
+                const currentValue = settings.totalChannels || 3;
                 if (currentValue < 20) {
                   setSettings({
                     ...settings,
-                    maxTotalChannels: currentValue + 1,
-                  });
-                }
-              }}
-            >
-              <AddIcon />
-            </IconButton>
-          </Grid>
-        </Grid>
-      </Box>
-
-      {/* Minimum Total Channels */}
-      <Box sx={{ marginBottom: 2 }}>
-        <Typography variant="subtitle1">Minimum Total Channels</Typography>
-        <Grid container alignItems="center" spacing={1}>
-          <Grid item>
-            <IconButton
-              size="small"
-              onClick={() => {
-                const currentValue = settings.minTotalChannels || 3;
-                if (currentValue > 1) {
-                  setSettings({
-                    ...settings,
-                    minTotalChannels: currentValue - 1,
-                  });
-                }
-              }}
-            >
-              <RemoveIcon />
-            </IconButton>
-          </Grid>
-          <Grid item>
-            <TextField
-              value={settings.minTotalChannels || 3}
-              onChange={(e) => {
-                const value = parseInt(e.target.value, 10);
-                if (!isNaN(value) && value >= 1 && value <= 20) {
-                  setSettings({ ...settings, minTotalChannels: value });
-                }
-              }}
-              inputProps={{ min: 1, max: 20, style: { textAlign: "center" } }}
-              variant="outlined"
-              size="small"
-              sx={{ width: "60px" }}
-            />
-          </Grid>
-          <Grid item>
-            <IconButton
-              size="small"
-              onClick={() => {
-                const currentValue = settings.minTotalChannels || 3;
-                if (currentValue < 20) {
-                  setSettings({
-                    ...settings,
-                    minTotalChannels: currentValue + 1,
+                    totalChannels: currentValue + 1,
                   });
                 }
               }}

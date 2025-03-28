@@ -150,67 +150,22 @@ export const usePacemanData = (settings) => {
           return a.debugInfo.score - b.debugInfo.score;
         });
 
-        // Use the minimum total channels setting (defaulting to 3)
-        const minChannels = settings.minTotalChannels || 3;
+        // Use the total channels setting (defaulting to 3)
+        const totalChannels = settings.totalChannels || 3;
 
-        // Only add previous channels if we're not filtering or if they match the filter
-        if (
-          orderedRuns.length < minChannels &&
-          filteredRunnersList.length === 0
-        ) {
-          liveChannels.forEach((channelData) => {
-            if (
-              !orderedRuns.find(
-                (run) => run.liveAccount === channelData.liveAccount
-              ) &&
-              orderedRuns.length < minChannels
-            ) {
-              orderedRuns.push({
-                liveAccount: channelData.liveAccount,
-                name: channelData.name || channelData.liveAccount,
-                minecraftName: channelData.minecraftName,
-                split: channelData.split,
-                time: channelData.time,
-                lastUpdated: channelData.lastUpdated,
-                pb: channelData.pb,
-              });
-            }
+        // Pad or truncate the array to match the total channels setting
+        let limitedRuns = orderedRuns.slice(0, totalChannels);
+        while (limitedRuns.length < totalChannels) {
+          limitedRuns.push({
+            liveAccount: "",
+            name: "",
+            minecraftName: "",
+            split: null,
+            time: null,
+            lastUpdated: null,
+            pb: null,
           });
         }
-
-        // If its still less than the minimum channels, add some hidden runs
-        // Only do this if we're not filtering or if the hidden runs match the filter
-        if (
-          orderedRuns.length < minChannels &&
-          (filteredRunnersList.length === 0 || hiddenRuns.length > 0)
-        ) {
-          for (const run of hiddenRuns) {
-            if (
-              !orderedRuns.find((r) => r.liveAccount === run.user.liveAccount)
-            ) {
-              const name = run.user.username || run.user.liveAccount;
-              const minecraftName = run.nickname; // This is the Minecraft account name
-              const nameForPb = minecraftName || name;
-              const pb = await fetchPbTime(nameForPb);
-
-              orderedRuns.push({
-                liveAccount: run.user.liveAccount,
-                name,
-                minecraftName,
-                split: null,
-                time: null,
-                lastUpdated: run.lastUpdated,
-                pb,
-              });
-
-              if (orderedRuns.length >= minChannels) break;
-            }
-          }
-        }
-
-        // Limit total channels based on setting (defaulting to 10)
-        const maxTotal = settings.maxTotalChannels || 10;
-        const limitedRuns = orderedRuns.slice(0, maxTotal);
 
         // Check if the liveChannels have changed by comparing liveAccount values, splits, or times
         const currentLiveAccounts = liveChannels.map((ch) => ch.liveAccount);
