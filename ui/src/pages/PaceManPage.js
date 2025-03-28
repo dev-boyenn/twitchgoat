@@ -25,7 +25,7 @@ import useSettings from "../services/useSettings";
 function PaceManPage() {
   const [value, setValue] = useState("2");
   const [chatChannel, setChatChannel] = useState(null);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const { settings, setSettings } = useSettings();
   const {
     liveChannels,

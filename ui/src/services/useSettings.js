@@ -10,6 +10,7 @@ const defaultSettings = {
   unmuteFocussedChannels: false,
   switchChatOnFocus: false,
   filteredRunners: "", // New setting for filtered runners
+  showDebugInfo: false, // Setting to control debug information visibility
 };
 
 /**

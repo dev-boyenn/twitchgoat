@@ -35,6 +35,18 @@ const SettingsPanel = ({ settings, setSettings }) => {
         />
         Switch Chat to first focussed channel
       </Box>
+      <Box>
+        <Checkbox
+          onChange={(e, v) =>
+            setSettings({
+              ...settings,
+              showDebugInfo: v,
+            })
+          }
+          checked={settings.showDebugInfo}
+        />
+        Show debug information on pace overlay
+      </Box>
       <Box sx={{ marginTop: 2 }}>
         <Typography variant="subtitle1">Max Focussed Channels</Typography>
         <Slider

@@ -306,6 +306,7 @@ function PlayerGrid({
                   name={channelData.minecraftName || channelData.name}
                   pb={channelData.pb}
                   debugInfo={channelData.debugInfo}
+                  settings={settings}
                 />
 
                 <TwitchPlayer
@@ -380,6 +381,7 @@ function PlayerGrid({
                 name={channelData.minecraftName || channelData.name}
                 pb={channelData.pb}
                 debugInfo={channelData.debugInfo}
+                settings={settings}
               />
 
               <TwitchPlayer

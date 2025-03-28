@@ -31,9 +31,10 @@ const splitLabels = {
  * @param {string} props.name - The runner's name
  * @param {number} props.pb - The runner's PB time
  * @param {Object} props.debugInfo - Debug information about timing and ranking
+ * @param {Object} props.settings - User settings
  * @returns {JSX.Element} The pace overlay component
  */
-const PaceOverlay = ({ split, time, name, pb, debugInfo }) => {
+const PaceOverlay = ({ split, time, name, pb, debugInfo, settings }) => {
   // Use state to track if image failed to load
   const [imageError, setImageError] = useState(false);
 
@@ -99,8 +100,8 @@ const PaceOverlay = ({ split, time, name, pb, debugInfo }) => {
         </Typography>
       )}
 
-      {/* Debug information */}
-      {debugInfo && (
+      {/* Debug information - only show if debugInfo exists and showDebugInfo setting is enabled */}
+      {debugInfo && settings && settings.showDebugInfo && (
         <>
           <Typography
             variant="body2"
