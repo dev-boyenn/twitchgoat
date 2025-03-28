@@ -307,6 +307,7 @@ function PlayerGrid({
                   pb={channelData.pb}
                   debugInfo={channelData.debugInfo}
                   settings={settings}
+                  skinUrl={channelData.skinUrl}
                 />
 
                 <TwitchPlayer
@@ -382,6 +383,7 @@ function PlayerGrid({
                 pb={channelData.pb}
                 debugInfo={channelData.debugInfo}
                 settings={settings}
+                skinUrl={channelData.skinUrl}
               />
 
               <TwitchPlayer

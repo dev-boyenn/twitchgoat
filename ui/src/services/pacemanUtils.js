@@ -170,6 +170,7 @@ export const processRunData = (run) => {
   const name = run.user.username || liveAccount; // Use username or fallback to liveAccount
   const minecraftName = run.nickname; // This is the Minecraft account name
   const lastUpdated = run.lastUpdated; // Get the lastUpdated timestamp
+  const uuid = run.user.uuid; // Get the user's UUID
   let split = null;
   let time = null;
 
@@ -207,6 +208,8 @@ export const processRunData = (run) => {
     time = run.eventList.find((e) => e.eventId === "rsg.enter_nether").igt;
   }
 
+  const skinUrl = `https://api.mineatar.io/face/${uuid}`; // Construct the skin URL
+
   return {
     liveAccount,
     name,
@@ -215,5 +218,6 @@ export const processRunData = (run) => {
     time: time ? time / 1000 : null,
     lastUpdated, // Include the lastUpdated timestamp
     pb: null, // Will be populated later
+    skinUrl, // Include the skin URL
   };
 };

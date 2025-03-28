@@ -32,9 +32,18 @@ const splitLabels = {
  * @param {number} props.pb - The runner's PB time
  * @param {Object} props.debugInfo - Debug information about timing and ranking
  * @param {Object} props.settings - User settings
+ * @param {string} props.skinUrl - The URL of the player's skin
  * @returns {JSX.Element} The pace overlay component
  */
-const PaceOverlay = ({ split, time, name, pb, debugInfo, settings }) => {
+const PaceOverlay = ({
+  split,
+  time,
+  name,
+  pb,
+  debugInfo,
+  settings,
+  skinUrl,
+}) => {
   // Use state to track if image failed to load
   const [imageError, setImageError] = useState(false);
 
@@ -62,6 +71,14 @@ const PaceOverlay = ({ split, time, name, pb, debugInfo, settings }) => {
           gap: "5px",
         }}
       >
+        {skinUrl && (
+          <img
+            src={skinUrl}
+            alt={name}
+            style={{ width: "24px", height: "24px", borderRadius: "50%" }}
+            onError={() => setImageError(true)}
+          />
+        )}
         {splitIcons[split] && !imageError ? (
           <img
             src={splitIcons[split]}

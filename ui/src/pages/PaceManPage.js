@@ -25,7 +25,7 @@ import useSettings from "../services/useSettings";
 function PaceManPage() {
   const [value, setValue] = useState("2");
   const [chatChannel, setChatChannel] = useState(null);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const { settings, setSettings } = useSettings();
   const {
     liveChannels,
@@ -37,7 +37,7 @@ function PaceManPage() {
 
   const setChatChannelMemo = useCallback((channel) => {
     setChatChannel(channel);
-    setOpen(true);
+    // setOpen(true);
     onTabChange(null, "2");
   }, []);
 
