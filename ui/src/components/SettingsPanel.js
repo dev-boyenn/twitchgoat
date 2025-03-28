@@ -16,33 +16,34 @@ import {
  * @returns {JSX.Element} The settings panel component
  */
 const SettingsPanel = ({ settings, setSettings }) => {
-  // Local state to handle slider values before committing them to settings
-  const [sliderValues, setSliderValues] = React.useState({
-    maxFocussedChannels: settings.maxFocussedChannels || 2,
-    maxTotalChannels: settings.maxTotalChannels || 10,
-    minTotalChannels: settings.minTotalChannels || 3,
-  });
+  // Create a memoized version of setSettings to prevent unnecessary re-renders
+  const memoizedSetSettings = React.useCallback(
+    (newSettings) => {
+      if (typeof newSettings === "function") {
+        setSettings((prevSettings) => {
+          const updatedSettings = newSettings(prevSettings);
+          // Force a delay to ensure the state update is processed
+          setTimeout(() => {
+            // This is just to trigger a re-render after the state has been updated
+            setSettings((current) => ({ ...current }));
+          }, 50);
+          return updatedSettings;
+        });
+      } else {
+        setSettings(newSettings);
+        // Force a delay to ensure the state update is processed
+        setTimeout(() => {
+          // This is just to trigger a re-render after the state has been updated
+          setSettings((current) => ({ ...current }));
+        }, 50);
+      }
+    },
+    [setSettings]
+  );
 
-  // Update local state when settings change
-  React.useEffect(() => {
-    setSliderValues({
-      maxFocussedChannels: settings.maxFocussedChannels || 2,
-      maxTotalChannels: settings.maxTotalChannels || 10,
-      minTotalChannels: settings.minTotalChannels || 3,
-    });
-  }, [settings]);
-
-  // Handle slider change (updates local state only)
+  // Handle slider change
   const handleSliderChange = (name) => (e, value) => {
-    setSliderValues((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  // Handle slider change committed (updates settings)
-  const handleSliderChangeCommitted = (name) => (e, value) => {
-    setSettings((prev) => ({
+    memoizedSetSettings((prev) => ({
       ...prev,
       [name]: value,
     }));
@@ -111,9 +112,8 @@ const SettingsPanel = ({ settings, setSettings }) => {
       <Box sx={{ marginBottom: 2 }}>
         <Typography variant="subtitle1">Max Focussed Channels</Typography>
         <Slider
-          value={sliderValues.maxFocussedChannels}
+          value={settings.maxFocussedChannels || 2}
           onChange={handleSliderChange("maxFocussedChannels")}
-          onChangeCommitted={handleSliderChangeCommitted("maxFocussedChannels")}
           step={1}
           min={1}
           max={10}
@@ -125,9 +125,8 @@ const SettingsPanel = ({ settings, setSettings }) => {
       <Box sx={{ marginBottom: 2 }}>
         <Typography variant="subtitle1">Max Total Channels</Typography>
         <Slider
-          value={sliderValues.maxTotalChannels}
+          value={settings.maxTotalChannels || 10}
           onChange={handleSliderChange("maxTotalChannels")}
-          onChangeCommitted={handleSliderChangeCommitted("maxTotalChannels")}
           step={1}
           min={1}
           max={20}
@@ -139,9 +138,8 @@ const SettingsPanel = ({ settings, setSettings }) => {
       <Box sx={{ marginBottom: 2 }}>
         <Typography variant="subtitle1">Minimum Total Channels</Typography>
         <Slider
-          value={sliderValues.minTotalChannels}
+          value={settings.minTotalChannels || 3}
           onChange={handleSliderChange("minTotalChannels")}
-          onChangeCommitted={handleSliderChangeCommitted("minTotalChannels")}
           step={1}
           min={1}
           max={20}
