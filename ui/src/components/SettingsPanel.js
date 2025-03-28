@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
+import { Link } from "react-router-dom";
 
 /**
  * Settings panel component
@@ -208,6 +209,7 @@ const SettingsPanel = ({ settings, setSettings }) => {
           size="small"
         />
       </Box>
+      <Link to="/pace-sort-info">Pace Sort Info</Link>
     </Box>
   );
 };

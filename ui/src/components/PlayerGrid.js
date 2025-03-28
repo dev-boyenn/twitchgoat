@@ -34,7 +34,7 @@ function PlayerGrid({
   const handleKeyPress = useCallback(
     (event) => {
       if (event.code === "KeyF") {
-        if (document.querySelectorAll(".twitch-player:hover").length == 0)
+        if (document.querySelectorAll(".twitch-player:hover").length === 0)
           return;
 
         // Get the ID from the hovered element
@@ -132,9 +132,6 @@ function PlayerGrid({
     if (numChannels === 1) return { columns: 1, rows: 1 };
     if (numChannels === 2) return { columns: 2, rows: 1 };
 
-    // Calculate container aspect ratio
-    const containerAspectRatio = containerWidth / containerHeight;
-
     // Target aspect ratio for each cell is 16:9
     const targetCellAspectRatio = 16 / 9;
 
@@ -171,7 +168,10 @@ function PlayerGrid({
   // The goal is to maintain 16:9 aspect ratio for each stream container
   const calculateHeightDistribution = () => {
     if (focussedChannels.length === 0 || unfocusedChannels.length === 0) {
-      return { focusedHeight: "100vh", unfocusedHeight: "0vh" };
+      return {
+        focusedHeight: "100vh",
+        unfocusedHeight: "0vh",
+      };
     }
 
     // Calculate the total available height

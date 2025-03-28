@@ -26,8 +26,8 @@ export const splitOrder = [
 
 // Progression bonus values for different splits
 export const progressionBonus = {
-  NETHER: -0.1,
-  S1: 0.1,
+  NETHER: -0.2,
+  S1: 0.2,
   S2: 0.7,
   BLIND: 0.8,
   STRONGHOLD: 0.85,
@@ -132,15 +132,15 @@ export const getAdjustedTime = (
   if (returnDetails) {
     return {
       score: finalScore,
-      currentSplitScore, // Add current split score
-      nextSplitScore, // Add next split score
+      currentSplitScore,
+      nextSplitScore,
       usedSplit: useNextSplit ? nextSplit : split,
       currentTime: time,
       estimatedTime: estimatedTimeSec,
       nextSplit: nextSplit,
       lastUpdated: lastUpdated,
-      goodSplitTime: goodsplits[nextSplit], // Add good split time for next split
-      progressionBonus: progressionBonus[nextSplit], // Add progression bonus for next split
+      goodSplitTime: goodsplits[nextSplit],
+      progressionBonus: progressionBonus[nextSplit],
     };
   }
 

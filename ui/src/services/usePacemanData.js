@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { fetchLiveRuns, fetchPbTime } from "./pacemanService";
 import { processRunData, getAdjustedTime } from "./pacemanUtils";
 
@@ -242,8 +242,6 @@ export const usePacemanData = (settings) => {
     if (lastFetchedChannels.length === 0) return;
 
     const updateInterval = setInterval(() => {
-      const currentTimestamp = Date.now();
-
       // Update each channel's estimated time and recalculate scores
       const updatedChannels = lastFetchedChannels.map((channel) => {
         if (
@@ -255,10 +253,6 @@ export const usePacemanData = (settings) => {
           return channel;
         }
 
-        // Calculate elapsed time since last update
-        const elapsedMs = currentTimestamp - channel.lastUpdated;
-        const newEstimatedTime = channel.time + elapsedMs / 1000;
-
         // Get the next split
         const nextSplit = channel.debugInfo.nextSplit;
 
@@ -266,63 +260,12 @@ export const usePacemanData = (settings) => {
           return channel;
         }
 
-        // Recalculate the next split score
-        const goodSplitTime =
-          channel.debugInfo.goodSplitTime ||
-          (nextSplit === "NETHER"
-            ? 90
-            : nextSplit === "S1"
-            ? 120
-            : nextSplit === "S2"
-            ? 240
-            : nextSplit === "BLIND"
-            ? 300
-            : nextSplit === "STRONGHOLD"
-            ? 400
-            : nextSplit === "END ENTER"
-            ? 420
-            : nextSplit === "FINISH"
-            ? 600
-            : 300);
-
-        const progressionBonus =
-          channel.debugInfo.progressionBonus ||
-          (nextSplit === "NETHER"
-            ? -0.1
-            : nextSplit === "S1"
-            ? 0.1
-            : nextSplit === "S2"
-            ? 0.7
-            : nextSplit === "BLIND"
-            ? 0.8
-            : nextSplit === "STRONGHOLD"
-            ? 0.85
-            : nextSplit === "END ENTER"
-            ? 0.9
-            : nextSplit === "FINISH"
-            ? 1.0
-            : 0.5);
-
-        // Calculate the score for the next split using the updated time
-        const nextSplitTimeFactor = newEstimatedTime / goodSplitTime;
-        const newNextSplitScore = nextSplitTimeFactor - progressionBonus;
-
-        // Determine which split to use for ranking
-        const useNextSplit =
-          newNextSplitScore > channel.debugInfo.currentSplitScore;
-        const finalScore = Math.max(
-          channel.debugInfo.currentSplitScore,
-          newNextSplitScore
+        const updatedDebugInfo = getAdjustedTime(
+          channel.split,
+          channel.time,
+          channel.lastUpdated,
+          true
         );
-
-        // Update the debug info
-        const updatedDebugInfo = {
-          ...channel.debugInfo,
-          estimatedTime: newEstimatedTime,
-          nextSplitScore: newNextSplitScore,
-          score: finalScore,
-          usedSplit: useNextSplit ? nextSplit : channel.split,
-        };
 
         return {
           ...channel,
