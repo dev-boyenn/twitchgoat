@@ -153,18 +153,31 @@ export const usePacemanData = (settings) => {
         // Use the total channels setting (defaulting to 3)
         const totalChannels = settings.totalChannels || 3;
 
-        // Pad or truncate the array to match the total channels setting
         let limitedRuns = orderedRuns.slice(0, totalChannels);
-        while (limitedRuns.length < totalChannels) {
-          limitedRuns.push({
-            liveAccount: "",
-            name: "",
-            minecraftName: "",
-            split: null,
-            time: null,
-            lastUpdated: null,
-            pb: null,
-          });
+
+        // If its less than the total channels, add some hidden runs
+        if (limitedRuns.length < totalChannels) {
+          for (const run of hiddenRuns) {
+            if (
+              !limitedRuns.find((r) => r.liveAccount === run.user.liveAccount)
+            ) {
+              const name = run.user.username || run.user.liveAccount;
+              const minecraftName = run.nickname; // This is the Minecraft account name
+              const nameForPb = minecraftName || name;
+              const pb = await fetchPbTime(nameForPb);
+
+              limitedRuns.push({
+                liveAccount: run.user.liveAccount,
+                name,
+                minecraftName,
+                split: null,
+                time: null,
+                lastUpdated: run.lastUpdated,
+                pb,
+              });
+              if (limitedRuns.length >= totalChannels) break;
+            }
+          }
         }
 
         // Check if the liveChannels have changed by comparing liveAccount values, splits, or times
