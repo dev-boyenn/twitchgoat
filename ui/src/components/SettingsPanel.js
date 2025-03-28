@@ -4,12 +4,12 @@ import {
   Checkbox,
   Typography,
   TextField,
+  IconButton,
   FormControlLabel,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
+  Grid,
 } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import RemoveIcon from "@mui/icons-material/Remove";
 
 /**
  * Settings panel component
@@ -19,13 +19,6 @@ import {
  * @returns {JSX.Element} The settings panel component
  */
 const SettingsPanel = ({ settings, setSettings }) => {
-  // Handle dropdown change
-  const handleChange = (name) => (event) => {
-    setSettings({
-      ...settings,
-      [name]: event.target.value,
-    });
-  };
   return (
     <Box sx={{ width: "100%", margin: 2 }}>
       <Typography variant="h5" gutterBottom>
@@ -88,71 +81,164 @@ const SettingsPanel = ({ settings, setSettings }) => {
 
       {/* Max Focussed Channels */}
       <Box sx={{ marginBottom: 2 }}>
-        <FormControl fullWidth>
-          <InputLabel id="max-focussed-channels-label">
-            Max Focussed Channels
-          </InputLabel>
-          <Select
-            labelId="max-focussed-channels-label"
-            value={settings.maxFocussedChannels || 2}
-            label="Max Focussed Channels"
-            onChange={handleChange("maxFocussedChannels")}
-          >
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-              <MenuItem key={num} value={num}>
-                {num}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <Typography variant="subtitle1">Max Focussed Channels</Typography>
+        <Grid container alignItems="center" spacing={1}>
+          <Grid item>
+            <IconButton
+              size="small"
+              onClick={() => {
+                const currentValue = settings.maxFocussedChannels || 2;
+                if (currentValue > 1) {
+                  setSettings({
+                    ...settings,
+                    maxFocussedChannels: currentValue - 1,
+                  });
+                }
+              }}
+            >
+              <RemoveIcon />
+            </IconButton>
+          </Grid>
+          <Grid item>
+            <TextField
+              value={settings.maxFocussedChannels || 2}
+              onChange={(e) => {
+                const value = parseInt(e.target.value, 10);
+                if (!isNaN(value) && value >= 1 && value <= 10) {
+                  setSettings({ ...settings, maxFocussedChannels: value });
+                }
+              }}
+              inputProps={{ min: 1, max: 10, style: { textAlign: "center" } }}
+              variant="outlined"
+              size="small"
+              sx={{ width: "60px" }}
+            />
+          </Grid>
+          <Grid item>
+            <IconButton
+              size="small"
+              onClick={() => {
+                const currentValue = settings.maxFocussedChannels || 2;
+                if (currentValue < 10) {
+                  setSettings({
+                    ...settings,
+                    maxFocussedChannels: currentValue + 1,
+                  });
+                }
+              }}
+            >
+              <AddIcon />
+            </IconButton>
+          </Grid>
+        </Grid>
       </Box>
 
       {/* Max Total Channels */}
       <Box sx={{ marginBottom: 2 }}>
-        <FormControl fullWidth>
-          <InputLabel id="max-total-channels-label">
-            Max Total Channels
-          </InputLabel>
-          <Select
-            labelId="max-total-channels-label"
-            value={settings.maxTotalChannels || 10}
-            label="Max Total Channels"
-            onChange={handleChange("maxTotalChannels")}
-          >
-            {[
-              1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-              20,
-            ].map((num) => (
-              <MenuItem key={num} value={num}>
-                {num}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <Typography variant="subtitle1">Max Total Channels</Typography>
+        <Grid container alignItems="center" spacing={1}>
+          <Grid item>
+            <IconButton
+              size="small"
+              onClick={() => {
+                const currentValue = settings.maxTotalChannels || 10;
+                if (currentValue > 1) {
+                  setSettings({
+                    ...settings,
+                    maxTotalChannels: currentValue - 1,
+                  });
+                }
+              }}
+            >
+              <RemoveIcon />
+            </IconButton>
+          </Grid>
+          <Grid item>
+            <TextField
+              value={settings.maxTotalChannels || 10}
+              onChange={(e) => {
+                const value = parseInt(e.target.value, 10);
+                if (!isNaN(value) && value >= 1 && value <= 20) {
+                  setSettings({ ...settings, maxTotalChannels: value });
+                }
+              }}
+              inputProps={{ min: 1, max: 20, style: { textAlign: "center" } }}
+              variant="outlined"
+              size="small"
+              sx={{ width: "60px" }}
+            />
+          </Grid>
+          <Grid item>
+            <IconButton
+              size="small"
+              onClick={() => {
+                const currentValue = settings.maxTotalChannels || 10;
+                if (currentValue < 20) {
+                  setSettings({
+                    ...settings,
+                    maxTotalChannels: currentValue + 1,
+                  });
+                }
+              }}
+            >
+              <AddIcon />
+            </IconButton>
+          </Grid>
+        </Grid>
       </Box>
 
       {/* Minimum Total Channels */}
       <Box sx={{ marginBottom: 2 }}>
-        <FormControl fullWidth>
-          <InputLabel id="min-total-channels-label">
-            Minimum Total Channels
-          </InputLabel>
-          <Select
-            labelId="min-total-channels-label"
-            value={settings.minTotalChannels || 3}
-            label="Minimum Total Channels"
-            onChange={handleChange("minTotalChannels")}
-          >
-            {[
-              1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-              20,
-            ].map((num) => (
-              <MenuItem key={num} value={num}>
-                {num}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <Typography variant="subtitle1">Minimum Total Channels</Typography>
+        <Grid container alignItems="center" spacing={1}>
+          <Grid item>
+            <IconButton
+              size="small"
+              onClick={() => {
+                const currentValue = settings.minTotalChannels || 3;
+                if (currentValue > 1) {
+                  setSettings({
+                    ...settings,
+                    minTotalChannels: currentValue - 1,
+                  });
+                }
+              }}
+            >
+              <RemoveIcon />
+            </IconButton>
+          </Grid>
+          <Grid item>
+            <TextField
+              value={settings.minTotalChannels || 3}
+              onChange={(e) => {
+                const value = parseInt(e.target.value, 10);
+                if (!isNaN(value) && value >= 1 && value <= 20) {
+                  setSettings({ ...settings, minTotalChannels: value });
+                }
+              }}
+              inputProps={{ min: 1, max: 20, style: { textAlign: "center" } }}
+              variant="outlined"
+              size="small"
+              sx={{ width: "60px" }}
+            />
+          </Grid>
+          <Grid item>
+            <IconButton
+              size="small"
+              onClick={() => {
+                const currentValue = settings.minTotalChannels || 3;
+                if (currentValue < 20) {
+                  setSettings({
+                    ...settings,
+                    minTotalChannels: currentValue + 1,
+                  });
+                }
+              }}
+            >
+              <AddIcon />
+            </IconButton>
+          </Grid>
+        </Grid>
       </Box>
 
       {/* Filter Runners */}
