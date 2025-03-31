@@ -1,19 +1,19 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as cache from 'memory-cache';
 
-interface LeaderboardEntry {
+interface PBEntry {
+  finish: number; // PB time in milliseconds
   uuid: string;
+  timestamp: number;
   name: string;
-  value: number; // PB time in milliseconds
-  qty: number;
-  avg: number;
+  pb: string; // Formatted time (e.g. "7:01")
 }
 
 @Injectable()
 export class PacemanService {
   private readonly logger = new Logger(PacemanService.name);
-  private leaderboardCache: LeaderboardEntry[] | null = null;
-  private leaderboardCacheTime = 0;
+  private pbsCache: PBEntry[] | null = null;
+  private pbsCacheTime = 0;
   private readonly CACHE_TTL = 60 * 60 * 1000; // 1 hour in milliseconds
 
   /**
@@ -30,21 +30,18 @@ export class PacemanService {
         return cachedPb;
       }
 
-      // Fetch the leaderboard if we don't have it cached or if the cache is expired
-      if (
-        !this.leaderboardCache ||
-        Date.now() - this.leaderboardCacheTime > this.CACHE_TTL
-      ) {
-        await this.fetchLeaderboard();
+      // Fetch the PBs if we don't have them cached or if the cache is expired
+      if (!this.pbsCache || Date.now() - this.pbsCacheTime > this.CACHE_TTL) {
+        await this.fetchPBs();
       }
 
-      // If we still don't have the leaderboard, return null
-      if (!this.leaderboardCache) {
+      // If we still don't have the PBs, return null
+      if (!this.pbsCache) {
         return null;
       }
 
-      // Find the player in the leaderboard
-      const playerEntry = this.leaderboardCache.find(
+      // Find the player in the PBs list
+      const playerEntry = this.pbsCache.find(
         (entry) => entry.name.toLowerCase() === username.toLowerCase(),
       );
 
@@ -55,7 +52,7 @@ export class PacemanService {
       }
 
       // Convert from milliseconds to seconds
-      const pbInSeconds = playerEntry.value / 1000;
+      const pbInSeconds = playerEntry.finish / 1000;
 
       // Cache the result for 1 hour
       cache.put(cacheKey, pbInSeconds, this.CACHE_TTL);
@@ -68,44 +65,37 @@ export class PacemanService {
   }
 
   /**
-   * Fetch the leaderboard from the paceman.gg API
+   * Fetch the personal best times from the paceman.gg API
    * @returns Promise<void>
    */
-  private async fetchLeaderboard(): Promise<void> {
+  private async fetchPBs(): Promise<void> {
     try {
-      this.logger.log('Fetching leaderboard from paceman.gg API');
+      this.logger.log('Fetching PBs from paceman.gg API');
 
-      const response = await fetch(
-        'https://paceman.gg/stats/api/getLeaderboard/?category=finish&type=fastest&days=99999&limit=10000',
-        {
-          headers: {
-            Accept: 'application/json',
-            'User-Agent': 'TwitchGoat/1.0',
-          },
+      const response = await fetch('https://paceman.gg/stats/api/getPBs/', {
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'TwitchGoat/1.0',
         },
-      );
+      });
 
       if (!response.ok) {
-        this.logger.error(
-          `Failed to fetch leaderboard: ${response.statusText}`,
-        );
+        this.logger.error(`Failed to fetch PBs: ${response.statusText}`);
         return;
       }
 
       const data = await response.json();
 
       if (!data || !Array.isArray(data) || data.length === 0) {
-        this.logger.error('Leaderboard data is empty or invalid');
+        this.logger.error('PBs data is empty or invalid');
         return;
       }
 
-      this.leaderboardCache = data;
-      this.leaderboardCacheTime = Date.now();
-      this.logger.log(
-        `Leaderboard fetched successfully with ${data.length} entries`,
-      );
+      this.pbsCache = data;
+      this.pbsCacheTime = Date.now();
+      this.logger.log(`PBs fetched successfully with ${data.length} entries`);
     } catch (error) {
-      this.logger.error('Error fetching leaderboard:', error);
+      this.logger.error('Error fetching PBs:', error);
     }
   }
 }
