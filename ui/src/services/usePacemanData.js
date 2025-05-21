@@ -178,8 +178,7 @@ export const usePacemanData = (settings) => {
         let hiddenRuns = data.filter(
           (run) =>
             run.user.liveAccount != null &&
-            run.isHidden === true &&
-            run.isCheated === false
+            (run.isHidden === true || run.isCheated === true)
         );
 
         // If we have a filter, apply it to both live and hidden runs
