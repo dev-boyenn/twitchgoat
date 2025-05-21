@@ -8,3 +8,53 @@
 .twitch-player:hover .chat-icon-container {
   opacity: 1;
 }
+
+/* Resize handle styling */
+.resize-handle {
+  background-color: transparent;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.resize-handle:hover {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Apply a different style when actively resizing */
+.resize-handle:active {
+  background-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Change cursor to indicate resizing is possible */
+.resize-handle {
+  cursor: row-resize;
+}
+
+/* Add a subtle indicator line to make the resize handle more visible */
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 4px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.resize-handle:hover::after {
+  opacity: 1;
+}
+
+/* Prevent text selection during resize */
+body.resizing {
+  user-select: none;
+  cursor: row-resize !important;
+}
+
+/* Ensure all elements maintain the resize cursor during active resizing */
+body.resizing * {
+  cursor: row-resize !important;
+}

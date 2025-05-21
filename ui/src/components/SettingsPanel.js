@@ -7,6 +7,8 @@ import {
   IconButton,
   FormControlLabel,
   Grid,
+  Slider,
+  Button,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { fetchLiveRuns, fetchPbTime } from "./pacemanService";
 import { processRunData, getAdjustedTime } from "./pacemanUtils";
 
@@ -14,6 +14,22 @@ export const usePacemanData = (settings) => {
     JSON.parse(window.localStorage.getItem("hiddenChannels")) || []
   );
   const [focussedChannels, setFocussedChannels] = useState([]);
+
+  // Create a ref to store PB cache that persists between renders but doesn't trigger re-renders
+  const pbCache = useRef({});
+
+  // Cache expiration time (1 hour in milliseconds)
+  const PB_CACHE_TTL = 60 * 60 * 1000;
+
+  // Cache stats
+  const cacheStats = useRef({
+    hits: 0,
+    misses: 0,
+    get hitRate() {
+      const total = this.hits + this.misses;
+      return total > 0 ? ((this.hits / total) * 100).toFixed(1) + "%" : "0%";
+    },
+  });
 
   // Save hidden channels to localStorage when they change
   useEffect(() => {
@@ -60,7 +76,83 @@ export const usePacemanData = (settings) => {
       .filter((username) => username !== ""); // Remove empty lines
   };
 
+  // Helper function to get PB time with caching
+  const getPbTimeWithCache = async (username) => {
+    const now = Date.now();
+
+    // Check if we have this PB in our cache and it's not expired
+    if (
+      pbCache.current[username] !== undefined &&
+      pbCache.current[username].timestamp > now - PB_CACHE_TTL
+    ) {
+      // Cache hit
+      cacheStats.current.hits++;
+      console.log(
+        `🔍 Using cached PB for ${username}: ${pbCache.current[username].value} (Cache hit rate: ${cacheStats.current.hitRate})`
+      );
+      return pbCache.current[username].value;
+    }
+
+    // If not in cache or expired, fetch it
+    cacheStats.current.misses++;
+    console.log(
+      `🔄 Fetching PB for ${username} (not in cache or expired) (Cache hit rate: ${cacheStats.current.hitRate})`
+    );
+    const pb = await fetchPbTime(username);
+    console.log(`✅ PB for ${username}: ${pb}`);
+
+    // Store in cache with timestamp
+    pbCache.current[username] = {
+      value: pb,
+      timestamp: now,
+    };
+
+    return pb;
+  };
+
+  // Function to clean up expired cache entries
+  const cleanupCache = () => {
+    const now = Date.now();
+    const expiredTime = now - PB_CACHE_TTL;
+
+    // Count before cleanup
+    const beforeCount = Object.keys(pbCache.current).length;
+
+    // Remove expired entries
+    Object.keys(pbCache.current).forEach((key) => {
+      if (pbCache.current[key].timestamp < expiredTime) {
+        delete pbCache.current[key];
+      }
+    });
+
+    // Count after cleanup
+    const afterCount = Object.keys(pbCache.current).length;
+
+    if (beforeCount !== afterCount) {
+      console.log(
+        `🧹 Cleaned up cache: removed ${
+          beforeCount - afterCount
+        } expired entries. Current cache size: ${afterCount} entries`
+      );
+    } else if (beforeCount > 0) {
+      console.log(
+        `📊 Cache status: ${beforeCount} entries, hit rate: ${cacheStats.current.hitRate}`
+      );
+    }
+  };
+
+  // Clean up cache periodically
   useEffect(() => {
+    const cleanupInterval = setInterval(cleanupCache, PB_CACHE_TTL / 2);
+    return () => clearInterval(cleanupInterval);
+  }, []);
+
+  useEffect(() => {
+    console.log("🔍 Effect triggered with dependencies:", {
+      liveChannelsLength: liveChannels.length,
+      settingsChanged: JSON.stringify(settings),
+    });
+
     async function getPaceChannels() {
       try {
         const data = await fetchLiveRuns();
@@ -77,11 +169,17 @@ export const usePacemanData = (settings) => {
 
         // Filter live runs
         let liveRuns = data.filter(
-          (run) => run.user.liveAccount != null && run.isHidden === false
+          (run) =>
+            run.user.liveAccount != null &&
+            run.isHidden === false &&
+            run.isCheated === false
         );
 
         let hiddenRuns = data.filter(
-          (run) => run.user.liveAccount != null && run.isHidden === true
+          (run) =>
+            run.user.liveAccount != null &&
+            run.isHidden === true &&
+            run.isCheated === false
         );
 
         // If we have a filter, apply it to both live and hidden runs
@@ -115,13 +213,11 @@ export const usePacemanData = (settings) => {
         // Map runs with basic info first
         let runsWithBasicInfo = liveRuns.map(processRunData);
 
-        // Fetch PB times for each runner
+        // Fetch PB times for each runner using cache
         const pbPromises = runsWithBasicInfo.map(async (run) => {
           // Use Minecraft nickname if available, otherwise use Twitch name
           const nameForPb = run.minecraftName || run.name;
-          console.log(`Fetching PB for ${nameForPb}...`);
-          const pb = await fetchPbTime(nameForPb);
-          console.log(`PB for ${nameForPb}: ${pb}`);
+          const pb = await getPbTimeWithCache(nameForPb);
           return { ...run, pb };
         });
 
@@ -164,7 +260,7 @@ export const usePacemanData = (settings) => {
               const name = run.user.username || run.user.liveAccount;
               const minecraftName = run.nickname; // This is the Minecraft account name
               const nameForPb = minecraftName || name;
-              const pb = await fetchPbTime(nameForPb);
+              const pb = await getPbTimeWithCache(nameForPb);
 
               limitedRuns.push({
                 liveAccount: run.user.liveAccount,
@@ -235,7 +331,7 @@ export const usePacemanData = (settings) => {
     return () => {
       clearInterval(interval);
     };
-  }, [liveChannels, settings]);
+  }, [settings]);
 
   // Update estimated times and scores every second
   useEffect(() => {

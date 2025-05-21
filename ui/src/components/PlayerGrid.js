@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import "./PlayerGrid.css";
 import { TwitchPlayer } from "react-twitch-embed";
 import { IconButton, Box } from "@mui/material";
@@ -23,6 +23,7 @@ function PlayerGrid({
   hiddenChannels,
   onToggleHideChannel,
   settings,
+  setSettings,
   setFocussedChannels,
   focussedChannels,
 }) {
@@ -97,6 +98,12 @@ function PlayerGrid({
     width: typeof window !== "undefined" ? window.innerWidth : 1280,
     height: typeof window !== "undefined" ? window.innerHeight : 720,
   });
+
+  // State for custom resize
+  const [isResizing, setIsResizing] = useState(false);
+  const [customFocusedHeight, setCustomFocusedHeight] = useState(null);
+  const resizeStartY = useRef(0);
+  const initialHeight = useRef(0);
 
   // Update window dimensions when window size changes
   useEffect(() => {
@@ -174,6 +181,13 @@ function PlayerGrid({
       };
     }
 
+    // If user has manually resized, use the custom height
+    if (customFocusedHeight !== null) {
+      const focusedHeight = `${customFocusedHeight}vh`;
+      const unfocusedHeight = `${100 - customFocusedHeight}vh`;
+      return { focusedHeight, unfocusedHeight };
+    }
+
     // Calculate the total available height
     const totalHeight = windowDimensions.height;
     const totalWidth = windowDimensions.width;
@@ -220,6 +234,71 @@ function PlayerGrid({
   // Calculate the height distribution
   const { focusedHeight, unfocusedHeight } = calculateHeightDistribution();
 
+  // Handle resize
+  const handleResize = useCallback((e) => {
+    // Get the current isResizing state from the body class
+    // This is more reliable than using the state variable
+    const currentIsResizing = document.body.classList.contains("resizing");
+
+    // Use the body class as a more reliable indicator
+    if (!currentIsResizing) return;
+
+    const deltaY = e.clientY - resizeStartY.current;
+    const deltaVh = (deltaY / window.innerHeight) * 100;
+
+    // Calculate new height percentage (vh)
+    let newHeight = initialHeight.current + deltaVh;
+
+    // Constrain to reasonable limits (10% to 90%)
+    newHeight = Math.max(10, Math.min(90, newHeight));
+
+    // Update local state only
+    setCustomFocusedHeight(newHeight);
+  }, []);
+
+  // Handle resize end
+  const handleResizeEnd = useCallback(() => {
+    setIsResizing(false);
+    document.removeEventListener("mousemove", handleResize);
+    document.removeEventListener("mouseup", handleResizeEnd);
+
+    // Remove class from body
+    document.body.classList.remove("resizing");
+  }, []);
+
+  // Handle resize start
+  const handleResizeStart = useCallback(
+    (e) => {
+      e.preventDefault();
+      setIsResizing(true);
+      resizeStartY.current = e.clientY;
+
+      // Get the current height from calculated value
+      initialHeight.current =
+        customFocusedHeight !== null
+          ? customFocusedHeight
+          : parseInt(focusedHeight);
+
+      // Add event listeners for resize
+      document.addEventListener("mousemove", handleResize);
+      document.addEventListener("mouseup", handleResizeEnd);
+
+      // Add class to body to prevent text selection during resize
+      document.body.classList.add("resizing");
+    },
+    [customFocusedHeight, focusedHeight, handleResize, handleResizeEnd]
+  );
+
+  // Clean up event listeners
+  useEffect(() => {
+    // This effect runs only once when the component mounts
+    // and cleans up when it unmounts
+    return () => {
+      document.removeEventListener("mousemove", handleResize);
+      document.removeEventListener("mouseup", handleResizeEnd);
+    };
+  }, []); // Empty dependency array means this runs once on mount
+
   // Calculate the grid layout for focused and unfocused channels
   const focusedGrid = calculateOptimalGrid(
     focussedChannels.length,
@@ -253,8 +332,26 @@ function PlayerGrid({
             gridTemplateColumns: focusedGridTemplateColumns,
             gridTemplateRows: focusedGridTemplateRows,
             gap: "2px", // Add a small gap between grid items
+            position: "relative",
+            cursor: isResizing ? "row-resize" : "default",
           }}
         >
+          {/* Resize handle */}
+          {unfocusedChannels.length > 0 && (
+            <div
+              className="resize-handle"
+              onMouseDown={handleResizeStart}
+              style={{
+                position: "absolute",
+                bottom: "-5px",
+                left: "0",
+                right: "0",
+                height: "10px",
+                zIndex: 1002,
+                cursor: "row-resize",
+              }}
+            />
+          )}
           {focussedChannels.map((channelName, index) => {
             // Find the channel data in the liveChannels array
             const channelData = liveChannels.find(
@@ -336,6 +433,7 @@ function PlayerGrid({
             gridTemplateColumns: unfocusedGridTemplateColumns,
             gridTemplateRows: unfocusedGridTemplateRows,
             gap: "2px", // Add a small gap between grid items
+            cursor: isResizing ? "row-resize" : "default",
           }}
         >
           {unfocusedChannels.map((channelData, index) => (

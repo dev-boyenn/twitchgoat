@@ -74,6 +74,7 @@ function PaceManPage() {
           setFocussedChannels={setFocussedChannels}
           focussedChannels={focussedChannels}
           settings={settings}
+          setSettings={setSettings}
         />
         <Drawer
           sx={{
