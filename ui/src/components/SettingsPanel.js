@@ -211,6 +211,29 @@ const SettingsPanel = ({ settings, setSettings }) => {
           size="small"
         />
       </Box>
+
+      {/* Always show ( twitch accounts enter separated ) */}
+            <Box sx={{ marginTop: 3 }}>
+        <Typography variant="subtitle1" gutterBottom>
+          Always Show (Twitch Accounts)
+        </Typography>
+        <Typography variant="caption" sx={{ display: "block", mb: 1 }}>
+          Enter one twitch username per line
+        </Typography>
+        <TextField
+          multiline
+          rows={6}
+          fullWidth
+          placeholder="boyenn&#10;topimpapig&#10;emia"
+          value={settings.alwaysShowTwitchAccounts}
+          onChange={(e) =>
+            setSettings({ ...settings, alwaysShowTwitchAccounts: e.target.value })
+          }
+          variant="outlined"
+          size="small"
+        />
+      </Box>
+
       <Link to="/pace-sort-info">Pace Sort Info</Link>
     </Box>
   );

@@ -162,6 +162,10 @@ export const usePacemanData = (settings) => {
           settings.filteredRunners
         );
 
+        const alwaysShowTwitchAccounts = parseFilteredRunners(
+          settings.alwaysShowTwitchAccounts
+        );
+
         // Log the filtered runners list
         if (filteredRunnersList.length > 0) {
           console.log("Filtering runners by:", filteredRunnersList);
@@ -200,13 +204,7 @@ export const usePacemanData = (settings) => {
           liveRuns = liveRuns.filter(matchesFilter);
           hiddenRuns = hiddenRuns.filter(matchesFilter);
 
-          // If no runners match the filter, don't show any
-          if (liveRuns.length === 0 && hiddenRuns.length === 0) {
-            console.log("No runners match the filter, showing empty grid");
-            setLiveChannels([]);
-            setFocussedChannels([]);
-            return;
-          }
+
         }
 
         // Map runs with basic info first
@@ -274,7 +272,26 @@ export const usePacemanData = (settings) => {
             }
           }
         }
-
+        console.log(settings);
+        // If it's still less than the total channels, fill with filtered runners
+        if (limitedRuns.length < totalChannels && alwaysShowTwitchAccounts.length > 0)
+        {
+          for (const username of alwaysShowTwitchAccounts) {
+            // Check if this username is already in the limited runs
+            if (
+              !limitedRuns.find(
+                (run) => run.liveAccount.toLowerCase() === username.toLowerCase()
+              )
+            ) { 
+       
+              limitedRuns.push({
+                liveAccount: username.toLowerCase(),
+                name: '',
+                minecraftName: '',
+              });
+            }
+          }
+        }
         // Check if the liveChannels have changed by comparing liveAccount values, splits, or times
         const currentLiveAccounts = liveChannels.map((ch) => ch.liveAccount);
         const newLiveAccounts = limitedRuns.map((run) => run.liveAccount);
