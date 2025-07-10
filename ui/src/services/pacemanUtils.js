@@ -217,7 +217,7 @@ export const processRunData = (run) => {
     split,
     time: time ? time / 1000 : null,
     lastUpdated, // Include the lastUpdated timestamp
-    pb: null, // Will be populated later
+    pb: run.pb || null, // Preserve PB from backend if available
     skinUrl, // Include the skin URL
   };
 };

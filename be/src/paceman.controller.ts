@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Logger } from '@nestjs/common';
+import { Controller, Get, Query, Logger, Param } from '@nestjs/common';
 import { PacemanService } from './paceman.service';
 
 interface PbResponse {
@@ -38,6 +38,27 @@ export class PacemanController {
       return {
         pb: null,
         username,
+        error: error.message || 'Unknown error',
+      };
+    }
+  }
+
+  @Get('event/:eventId/liveruns')
+  async getEventLiveRuns(@Param('eventId') eventId: string) {
+    this.logger.log(`Getting live runs for event: ${eventId}`);
+
+    if (!eventId) {
+      return {
+        error: 'Event ID is required',
+      };
+    }
+
+    try {
+      const liveRuns = await this.pacemanService.getEventLiveRuns(eventId);
+      return liveRuns;
+    } catch (error) {
+      this.logger.error(`Error getting live runs for event ${eventId}:`, error);
+      return {
         error: error.message || 'Unknown error',
       };
     }

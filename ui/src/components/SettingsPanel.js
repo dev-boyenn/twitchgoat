@@ -22,10 +22,24 @@ import { Link } from "react-router-dom";
  * @returns {JSX.Element} The settings panel component
  */
 const SettingsPanel = ({ settings, setSettings }) => {
+  // Check if we're in event mode
+  const urlParams = new URLSearchParams(window.location.search);
+  const eventId = urlParams.get("event");
+  const isEventMode = !!eventId;
+
   return (
     <Box sx={{ width: "100%", margin: 2 }}>
       <Typography variant="h5" gutterBottom>
-        Settings
+        Settings{" "}
+        {isEventMode && (
+          <Typography
+            component="span"
+            variant="caption"
+            sx={{ ml: 1, color: "primary.main" }}
+          >
+            (Event Mode: {eventId})
+          </Typography>
+        )}
       </Typography>
 
       {/* Unmute Focussed Channels */}
@@ -212,29 +226,36 @@ const SettingsPanel = ({ settings, setSettings }) => {
         />
       </Box>
 
-      {/* Always show ( twitch accounts enter separated ) */}
-            <Box sx={{ marginTop: 3 }}>
-        <Typography variant="subtitle1" gutterBottom>
-          Always Show (Twitch Accounts)
-        </Typography>
-        <Typography variant="caption" sx={{ display: "block", mb: 1 }}>
-          Enter one twitch username per line
-        </Typography>
-        <TextField
-          multiline
-          rows={6}
-          fullWidth
-          placeholder="boyenn&#10;topimpapig&#10;emia"
-          value={settings.alwaysShowTwitchAccounts}
-          onChange={(e) =>
-            setSettings({ ...settings, alwaysShowTwitchAccounts: e.target.value })
-          }
-          variant="outlined"
-          size="small"
-        />
-      </Box>
+      {/* Always show ( twitch accounts enter separated ) - Hidden in event mode */}
+      {!isEventMode && (
+        <Box sx={{ marginTop: 3 }}>
+          <Typography variant="subtitle1" gutterBottom>
+            Always Show (Twitch Accounts)
+          </Typography>
+          <Typography variant="caption" sx={{ display: "block", mb: 1 }}>
+            Enter one twitch username per line
+          </Typography>
+          <TextField
+            multiline
+            rows={6}
+            fullWidth
+            placeholder="boyenn&#10;topimpapig&#10;emia"
+            value={settings.alwaysShowTwitchAccounts}
+            onChange={(e) =>
+              setSettings({
+                ...settings,
+                alwaysShowTwitchAccounts: e.target.value,
+              })
+            }
+            variant="outlined"
+            size="small"
+          />
+        </Box>
+      )}
 
-      <Link to="/pace-sort-info">Pace Sort Info</Link>
+      <Link to={`/pace-sort-info${window.location.search}`}>
+        Pace Sort Info
+      </Link>
     </Box>
   );
 };

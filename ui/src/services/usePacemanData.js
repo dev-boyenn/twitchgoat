@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { fetchLiveRuns, fetchPbTime } from "./pacemanService";
+import {
+  fetchLiveRuns,
+  fetchEventLiveRuns,
+  fetchPbTime,
+} from "./pacemanService";
 import { processRunData, getAdjustedTime } from "./pacemanUtils";
 
 /**
@@ -155,7 +159,18 @@ export const usePacemanData = (settings) => {
 
     async function getPaceChannels() {
       try {
-        const data = await fetchLiveRuns();
+        // Check if we're in event mode by looking for event query parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const eventId = urlParams.get("event");
+
+        // Fetch data based on whether we're in event mode or not
+        const data = eventId
+          ? await fetchEventLiveRuns(eventId)
+          : await fetchLiveRuns();
+
+        console.log(
+          `Fetching ${eventId ? `event ${eventId}` : "regular"} live runs`
+        );
 
         // Parse filtered runners
         const filteredRunnersList = parseFilteredRunners(
@@ -184,9 +199,9 @@ export const usePacemanData = (settings) => {
             run.user.liveAccount != null &&
             (run.isHidden === true || run.isCheated === true)
         );
-
         // If we have a filter, apply it to both live and hidden runs
-        if (filteredRunnersList.length > 0) {
+        // Skip filtering in event mode as the backend already handles whitelisting
+        if (filteredRunnersList.length > 0 && !eventId) {
           // Helper function to check if a run matches the filter
           const matchesFilter = (run) => {
             const isMatch = filteredRunnersList.some(
@@ -203,16 +218,19 @@ export const usePacemanData = (settings) => {
           // Filter both live and hidden runs
           liveRuns = liveRuns.filter(matchesFilter);
           hiddenRuns = hiddenRuns.filter(matchesFilter);
-
-
         }
-
         // Map runs with basic info first
         let runsWithBasicInfo = liveRuns.map(processRunData);
 
         // Fetch PB times for each runner using cache
         const pbPromises = runsWithBasicInfo.map(async (run) => {
-          // Use Minecraft nickname if available, otherwise use Twitch name
+          // If the backend already provided a PB (for off-pace runners in event mode), use it
+          if (run.pb) {
+            console.log(`Using PB from backend for ${run.name}: ${run.pb}`);
+            return run;
+          }
+
+          // Otherwise, fetch it using the cache
           const nameForPb = run.minecraftName || run.name;
           const pb = await getPbTimeWithCache(nameForPb);
           return { ...run, pb };
@@ -274,20 +292,24 @@ export const usePacemanData = (settings) => {
         }
         console.log(settings);
         // If it's still less than the total channels, fill with filtered runners
-        if (limitedRuns.length < totalChannels && alwaysShowTwitchAccounts.length > 0)
-        {
+        // Skip this in event mode as the backend already handles whitelisted runners
+        if (
+          limitedRuns.length < totalChannels &&
+          alwaysShowTwitchAccounts.length > 0 &&
+          !eventId
+        ) {
           for (const username of alwaysShowTwitchAccounts) {
             // Check if this username is already in the limited runs
             if (
               !limitedRuns.find(
-                (run) => run.liveAccount.toLowerCase() === username.toLowerCase()
+                (run) =>
+                  run.liveAccount.toLowerCase() === username.toLowerCase()
               )
-            ) { 
-       
+            ) {
               limitedRuns.push({
                 liveAccount: username.toLowerCase(),
-                name: '',
-                minecraftName: '',
+                name: "",
+                minecraftName: "",
               });
             }
           }

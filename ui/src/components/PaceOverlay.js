@@ -47,7 +47,8 @@ const PaceOverlay = ({
   // Use state to track if image failed to load
   const [imageError, setImageError] = useState(false);
 
-  if (!split || !time) return null;
+  // Don't show overlay if we don't have any meaningful data
+  if (!name && !split && !time) return null;
 
   return (
     <Box
@@ -64,53 +65,73 @@ const PaceOverlay = ({
         flexDirection: "column",
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: "5px",
-        }}
-      >
-        {skinUrl && (
-          <img
-            src={skinUrl}
-            alt={name}
-            style={{ width: "24px", height: "24px", borderRadius: "50%" }}
-            onError={() => setImageError(true)}
-          />
-        )}
-        {splitIcons[split] && !imageError ? (
-          <img
-            src={splitIcons[split]}
-            alt={split}
-            style={{ width: "24px", height: "24px" }}
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <span
-            style={{
-              fontWeight: "bold",
-              color:
-                split === "NETHER"
-                  ? "#9b59b6"
-                  : split === "S1"
-                  ? "#f1c40f"
-                  : split === "S2"
-                  ? "#34495e"
-                  : split === "BLIND"
-                  ? "#2ecc71"
-                  : split === "STRONGHOLD"
-                  ? "#95a5a6"
-                  : split === "END ENTER"
-                  ? "#3498db"
-                  : "white",
+      {split && time ? (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+          }}
+        >
+          {skinUrl && (
+            <img
+              src={skinUrl}
+              alt={name}
+              style={{ width: "24px", height: "24px", borderRadius: "50%" }}
+              onError={() => setImageError(true)}
+            />
+          )}
+          {splitIcons[split] && !imageError ? (
+            <img
+              src={splitIcons[split]}
+              alt={split}
+              style={{ width: "24px", height: "24px" }}
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <span
+              style={{
+                fontWeight: "bold",
+                color:
+                  split === "NETHER"
+                    ? "#9b59b6"
+                    : split === "S1"
+                    ? "#f1c40f"
+                    : split === "S2"
+                    ? "#34495e"
+                    : split === "BLIND"
+                    ? "#2ecc71"
+                    : split === "STRONGHOLD"
+                    ? "#95a5a6"
+                    : split === "END ENTER"
+                    ? "#3498db"
+                    : "white",
+              }}
+            >
+              {splitLabels[split] || split}
+            </span>
+          )}
+          <Typography variant="body2">{formatTime(time)}</Typography>
+        </Box>
+      ) : (
+        // For off-pace runners, just show their skin/avatar
+        skinUrl && (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: "5px",
             }}
           >
-            {splitLabels[split] || split}
-          </span>
-        )}
-        <Typography variant="body2">{formatTime(time)}</Typography>
-      </Box>
+            <img
+              src={skinUrl}
+              alt={name}
+              style={{ width: "24px", height: "24px", borderRadius: "50%" }}
+              onError={() => setImageError(true)}
+            />
+          </Box>
+        )
+      )}
       {name && (
         <Typography variant="body2" sx={{ fontSize: "0.85rem" }}>
           {name} {pb ? `(PB: ${formatTime(pb)})` : ""}

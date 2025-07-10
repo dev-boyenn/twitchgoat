@@ -8,7 +8,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import TabPanel from "@mui/lab/TabPanel";
 import Drawer from "@mui/material/Drawer";
 import { TwitchChat } from "react-twitch-embed";
-import { IconButton } from "@mui/material";
+import { IconButton, Typography, Paper } from "@mui/material";
 
 // Custom components
 import PlayerGrid from "../components/PlayerGrid";
@@ -34,6 +34,11 @@ function PaceManPage() {
     setFocussedChannels,
     onToggleHideChannel,
   } = usePacemanData(settings);
+
+  // Check if we're in event mode
+  const urlParams = new URLSearchParams(window.location.search);
+  const eventId = urlParams.get("event");
+  const isEventMode = !!eventId;
 
   const setChatChannelMemo = useCallback((channel) => {
     setChatChannel(channel);

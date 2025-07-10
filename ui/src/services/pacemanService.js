@@ -62,3 +62,37 @@ export const fetchLiveRuns = async () => {
     return [];
   }
 };
+
+/**
+ * Fetches event-specific live runs from our backend
+ * @param {string} eventId - The event ID to fetch live runs for
+ * @returns {Promise<Array>} Array of event-specific live runs
+ */
+export const fetchEventLiveRuns = async (eventId) => {
+  try {
+    const apiBaseUrl = getApiBaseUrl();
+    const response = await fetch(
+      `${apiBaseUrl}/paceman/event/${eventId}/liveruns`
+    );
+
+    if (!response.ok) {
+      console.error(
+        `Error fetching event live runs for ${eventId}: ${response.statusText}`
+      );
+      return [];
+    }
+
+    const data = await response.json();
+
+    // Check if there's an error in the response
+    if (data.error) {
+      console.error(`Error fetching event live runs: ${data.error}`);
+      return [];
+    }
+
+    return data;
+  } catch (error) {
+    console.error(`Error fetching event live runs for ${eventId}:`, error);
+    return [];
+  }
+};
