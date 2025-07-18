@@ -10,6 +10,7 @@ const defaultSettings = {
   switchChatOnFocus: false,
   filteredRunners: "", // New setting for filtered runners
   showDebugInfo: false, // Setting to control debug information visibility
+  hiddenStreams: [], // Array of stream names to hide in event mode
 };
 
 /**

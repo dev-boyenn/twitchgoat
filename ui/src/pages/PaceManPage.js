@@ -29,6 +29,7 @@ function PaceManPage() {
   const { settings, setSettings } = useSettings();
   const {
     liveChannels,
+    allLiveChannels,
     hiddenChannels,
     focussedChannels,
     setFocussedChannels,
@@ -113,7 +114,11 @@ function PaceManPage() {
               />
             </TabPanel>
             <TabPanel value="3">
-              <SettingsPanel settings={settings} setSettings={setSettings} />
+              <SettingsPanel
+                settings={settings}
+                setSettings={setSettings}
+                liveChannels={allLiveChannels}
+              />
             </TabPanel>
           </TabContext>
         </Drawer>

@@ -13,6 +13,7 @@ import { processRunData, getAdjustedTime } from "./pacemanUtils";
  */
 export const usePacemanData = (settings) => {
   const [liveChannels, setLiveChannels] = useState([]);
+  const [allLiveChannels, setAllLiveChannels] = useState([]); // All channels before hiddenStreams filtering
   const [lastFetchedChannels, setLastFetchedChannels] = useState([]);
   const [hiddenChannels, setHiddenChannels] = useState(
     JSON.parse(window.localStorage.getItem("hiddenChannels")) || []
@@ -261,10 +262,30 @@ export const usePacemanData = (settings) => {
           return a.debugInfo.score - b.debugInfo.score;
         });
 
+        // Store all live channels for settings panel (before any filtering)
+        setAllLiveChannels(orderedRuns);
+
         // Use the total channels setting (defaulting to 3)
         const totalChannels = settings.totalChannels || 3;
 
-        let limitedRuns = orderedRuns.slice(0, totalChannels);
+        // Filter out hidden streams in event mode
+        let filteredRuns = orderedRuns;
+        if (
+          eventId &&
+          settings.hiddenStreams &&
+          settings.hiddenStreams.length > 0
+        ) {
+          filteredRuns = orderedRuns.filter(
+            (run) => !settings.hiddenStreams.includes(run.liveAccount)
+          );
+          console.log(
+            `Filtered out ${
+              orderedRuns.length - filteredRuns.length
+            } hidden streams in event mode`
+          );
+        }
+
+        let limitedRuns = filteredRuns.slice(0, totalChannels);
 
         // If its less than the total channels, add some hidden runs
         if (limitedRuns.length < totalChannels) {
@@ -422,6 +443,7 @@ export const usePacemanData = (settings) => {
 
   return {
     liveChannels,
+    allLiveChannels,
     hiddenChannels,
     focussedChannels,
     setFocussedChannels,

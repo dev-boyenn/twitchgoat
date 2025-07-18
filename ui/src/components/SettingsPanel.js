@@ -9,9 +9,18 @@ import {
   Grid,
   Slider,
   Button,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  ListItemIcon,
+  Avatar,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import PersonIcon from "@mui/icons-material/Person";
 import { Link } from "react-router-dom";
 
 /**
@@ -19,13 +28,34 @@ import { Link } from "react-router-dom";
  * @param {Object} props - Component props
  * @param {Object} props.settings - User settings
  * @param {Function} props.setSettings - Function to update settings
+ * @param {Array} props.liveChannels - List of live channels (for event mode stream visibility)
  * @returns {JSX.Element} The settings panel component
  */
-const SettingsPanel = ({ settings, setSettings }) => {
+const SettingsPanel = ({ settings, setSettings, liveChannels = [] }) => {
   // Check if we're in event mode
   const urlParams = new URLSearchParams(window.location.search);
   const eventId = urlParams.get("event");
   const isEventMode = !!eventId;
+
+  // Helper function to toggle stream visibility
+  const toggleStreamVisibility = (streamName) => {
+    const hiddenStreams = settings.hiddenStreams || [];
+    const isHidden = hiddenStreams.includes(streamName);
+
+    if (isHidden) {
+      // Remove from hidden streams
+      setSettings({
+        ...settings,
+        hiddenStreams: hiddenStreams.filter((name) => name !== streamName),
+      });
+    } else {
+      // Add to hidden streams
+      setSettings({
+        ...settings,
+        hiddenStreams: [...hiddenStreams, streamName],
+      });
+    }
+  };
 
   return (
     <Box sx={{ width: "100%", margin: 2 }}>
@@ -203,6 +233,77 @@ const SettingsPanel = ({ settings, setSettings }) => {
           </Grid>
         </Grid>
       </Box>
+
+      {/* Stream Visibility Management - Only in event mode */}
+      {isEventMode && liveChannels.length > 0 && (
+        <Box sx={{ marginTop: 3 }}>
+          <Typography variant="subtitle1" gutterBottom>
+            Stream Visibility
+          </Typography>
+          <Typography variant="caption" sx={{ display: "block", mb: 1 }}>
+            Hide/show live streams in event mode
+          </Typography>
+          <List dense sx={{ maxHeight: 200, overflow: "auto" }}>
+            {liveChannels.map((channel) => {
+              const streamName = channel.liveAccount;
+              const displayName =
+                channel.minecraftName || channel.name || streamName;
+              const isHidden = (settings.hiddenStreams || []).includes(
+                streamName
+              );
+
+              return (
+                <ListItem key={streamName} sx={{ px: 0 }}>
+                  <ListItemIcon sx={{ minWidth: 40 }}>
+                    {channel.skinUrl ? (
+                      <Avatar
+                        src={channel.skinUrl}
+                        alt={displayName}
+                        sx={{
+                          width: 24,
+                          height: 24,
+                          opacity: isHidden ? 0.6 : 1,
+                        }}
+                      />
+                    ) : (
+                      <Avatar
+                        sx={{
+                          width: 24,
+                          height: 24,
+                          bgcolor: "grey.500",
+                          opacity: isHidden ? 0.6 : 1,
+                        }}
+                      >
+                        <PersonIcon sx={{ fontSize: 16 }} />
+                      </Avatar>
+                    )}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={displayName}
+                    secondary={streamName}
+                    sx={{
+                      textDecoration: isHidden ? "line-through" : "none",
+                      opacity: isHidden ? 0.6 : 1,
+                    }}
+                  />
+                  <ListItemSecondaryAction>
+                    <IconButton
+                      edge="end"
+                      onClick={() => toggleStreamVisibility(streamName)}
+                      size="small"
+                      sx={{
+                        color: isHidden ? "text.disabled" : "primary.main",
+                      }}
+                    >
+                      {isHidden ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              );
+            })}
+          </List>
+        </Box>
+      )}
 
       {/* Filter Runners */}
       <Box sx={{ marginTop: 3 }}>
