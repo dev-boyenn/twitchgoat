@@ -231,6 +231,95 @@ export class PacemanService {
   }
 
   /**
+   * Get the most recent run time for a UUID by fetching from the recent runs API
+   * @param uuid The UUID to check
+   * @param playerName The player name for the API call
+   * @returns Promise<number> The timestamp of the most recent run, or 0 if none found
+   */
+  private async getMostRecentRunTime(
+    uuid: string,
+    playerName: string,
+  ): Promise<number> {
+    try {
+      const cacheKey = `recent_run_${uuid}`;
+      const cachedTime = cache.get(cacheKey);
+      if (cachedTime !== null) {
+        return cachedTime;
+      }
+
+      const response = await fetch(
+        `https://paceman.gg/stats/api/getRecentRuns/?name=${encodeURIComponent(
+          playerName,
+        )}&hours=99999&limit=1`,
+        {
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'TwitchGoat/1.0',
+          },
+        },
+      );
+
+      if (!response.ok) {
+        this.logger.warn(
+          `Failed to fetch recent runs for ${playerName}: ${response.statusText}`,
+        );
+        return 0;
+      }
+
+      const runs = await response.json();
+      const mostRecentTime = runs && runs.length > 0 ? runs[0].time || 0 : 0;
+
+      // Cache for 5 minutes
+      cache.put(cacheKey, mostRecentTime, this.EVENT_CACHE_TTL);
+
+      return mostRecentTime;
+    } catch (error) {
+      this.logger.error(`Error fetching recent runs for ${playerName}:`, error);
+      return 0;
+    }
+  }
+
+  /**
+   * Choose the most recent UUID from a list of statuses with the same liveAccount
+   * @param statuses Array of TwitchStatus objects with the same liveAccount
+   * @param liveAccount The liveAccount name
+   * @returns Promise<string> The UUID with the most recent run
+   */
+  private async getMostRecentUuid(
+    statuses: TwitchStatus[],
+    liveAccount: string,
+  ): Promise<string> {
+    let mostRecentUuid = statuses[0].uuid;
+    let mostRecentTime = 0;
+
+    for (const status of statuses) {
+      // Get player name from PB data
+      const pbData = this.pbsCache?.find((entry) => entry.uuid === status.uuid);
+      const playerName = pbData?.name;
+
+      // Skip if we don't have a player name to query with
+      if (!playerName) {
+        this.logger.warn(
+          `No player name found for UUID ${status.uuid}, skipping recent run check`,
+        );
+        continue;
+      }
+
+      const runTime = await this.getMostRecentRunTime(status.uuid, playerName);
+
+      if (runTime > mostRecentTime) {
+        mostRecentTime = runTime;
+        mostRecentUuid = status.uuid;
+      }
+    }
+
+    this.logger.log(
+      `Chose UUID ${mostRecentUuid} for liveAccount ${liveAccount} (most recent run: ${mostRecentTime})`,
+    );
+    return mostRecentUuid;
+  }
+
+  /**
    * Get live runs from paceman.gg API
    * @returns Promise<LiveRun[]>
    */
@@ -289,11 +378,40 @@ export class PacemanService {
       // Get Twitch status for all whitelisted runners
       const twitchStatuses = await this.getTwitchStatus(event.whitelist);
 
-      // Create a map for quick lookup
+      // Create a map for quick lookup, handling duplicate liveAccounts by choosing the most recent UUID
       const twitchStatusMap = new Map<string, string | null>();
+
+      // Group statuses by liveAccount to handle duplicates
+      const liveAccountGroups = new Map<string, TwitchStatus[]>();
       twitchStatuses.forEach((status) => {
-        twitchStatusMap.set(status.uuid, status.liveAccount);
+        if (status.liveAccount) {
+          if (!liveAccountGroups.has(status.liveAccount)) {
+            liveAccountGroups.set(status.liveAccount, []);
+          }
+          liveAccountGroups.get(status.liveAccount)!.push(status);
+        } else {
+          // Add null liveAccount entries directly
+          twitchStatusMap.set(status.uuid, status.liveAccount);
+        }
       });
+
+      // For each liveAccount with multiple UUIDs, choose the one with the most recent run
+      for (const [liveAccount, statuses] of liveAccountGroups) {
+        if (statuses.length === 1) {
+          // No conflict, add directly
+          twitchStatusMap.set(statuses[0].uuid, liveAccount);
+        } else {
+          // Multiple UUIDs for the same liveAccount, choose the most recent one
+          const mostRecentUuid = await this.getMostRecentUuid(
+            statuses,
+            liveAccount,
+          );
+          twitchStatusMap.set(mostRecentUuid, liveAccount);
+          this.logger.log(
+            `Resolved duplicate liveAccount ${liveAccount}: chose UUID ${mostRecentUuid} from ${statuses.length} candidates`,
+          );
+        }
+      }
 
       // Get all live runs
       const allLiveRuns = await this.getLiveRuns();
